@@ -1,0 +1,652 @@
+{% extends 'customers/onboarding/onboarding_base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% load i18n %}
+{# Remova a linha {% load custom_filters %} daqui, pois ela já está carregada no base.html #}
+
+{% block onboarding_content %}
+    <h2>{{ page_title }}</h2>
+    {% if current_step_key == 'ownership_management' %}
+        {# Management and Key Employees #}
+        <div class="d-flex justify-content-between align-items-center mb-2 contacts-header">
+            <h3 class="m-0">{% trans "Management and Key Employees" %}</h3>
+            <a href="{% url 'customers:ownership_mgmt_add_mke' pk=company.pk %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i> {% trans "Adicionar" %}
+            </a>
+        </div>
+        <div class="table-responsive contacts-table-wrapper mb-4">
+            <table class="table table-sm table-striped align-middle contacts-table">
+                <thead><tr>
+                    <th>{% trans "Full Name" %}</th>
+                    <th>{% trans "Job Title" %}</th>
+                    <th>{% trans "Nationality" %}</th>
+                    <th>{% trans "Passport Number" %}</th>
+                    <th>{% trans "Country of Residence" %}</th>
+                    <th>{% trans "Government Official" %}*</th>
+                    <th class="text-end actions-col">{% trans "Ações" %}</th>
+                </tr></thead>
+                <tbody>
+                {% if company.ownership_management %}
+                    {% for it in company.ownership_management.management_and_key_employees.all %}
+                        <tr>
+                            <td>{{ it.full_name }}</td><td>{{ it.job_title }}</td><td>{{ it.nationality }}</td>
+                            <td>{{ it.passport_number|default:'-' }}</td><td>{{ it.country_of_residence }}</td>
+                            <td>{{ it.government_official|yesno:"Sim,Não" }}</td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a class="btn btn-outline-secondary" href="{% url 'customers:ownership_mgmt_edit_mke' pk=company.pk item_pk=it.pk %}">{% trans "Editar" %}</a>
+                                    <a class="btn btn-outline-danger" href="{% url 'customers:ownership_mgmt_del_mke' pk=company.pk item_pk=it.pk %}">{% trans "Excluir" %}</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="7" class="text-center text-muted">{% trans "Nenhum item." %}</td></tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="7" class="text-center text-muted">{% trans "Nenhum item." %}</td></tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Board of Directors #}
+        <div class="d-flex justify-content-between align-items-center mb-2 contacts-header">
+            <h3 class="m-0">{% trans "Board of Directors" %}</h3>
+            <a href="{% url 'customers:ownership_mgmt_add_board' pk=company.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i> {% trans "Adicionar" %}</a>
+        </div>
+        <div class="table-responsive contacts-table-wrapper mb-4">
+            <table class="table table-sm table-striped align-middle contacts-table">
+                <thead><tr>
+                    <th>{% trans "Full Name" %}</th>
+                    <th>{% trans "Board Position" %}</th>
+                    <th>{% trans "Nationality" %}</th>
+                    <th>{% trans "Passport Number" %}</th>
+                    <th>{% trans "Country of Residence" %}</th>
+                    <th>{% trans "Government Official" %}*</th>
+                    <th class="text-end actions-col">{% trans "Ações" %}</th>
+                </tr></thead>
+                <tbody>
+                {% if company.ownership_management %}
+                    {% for it in company.ownership_management.board_of_directors.all %}
+                        <tr>
+                            <td>{{ it.full_name }}</td><td>{{ it.board_position }}</td><td>{{ it.nationality }}</td>
+                            <td>{{ it.passport_number|default:'-' }}</td><td>{{ it.country_of_residence }}</td>
+                            <td>{{ it.government_official|yesno:"Sim,Não" }}</td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a class="btn btn-outline-secondary" href="{% url 'customers:ownership_mgmt_edit_board' pk=company.pk item_pk=it.pk %}">{% trans "Editar" %}</a>
+                                    <a class="btn btn-outline-danger" href="{% url 'customers:ownership_mgmt_del_board' pk=company.pk item_pk=it.pk %}">{% trans "Excluir" %}</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="7" class="text-center text-muted">{% trans "Nenhum item." %}</td></tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="7" class="text-center text-muted">{% trans "Nenhum item." %}</td></tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {# UBOs #}
+        <div class="d-flex justify-content-between align-items-center mb-2 contacts-header">
+            <h3 class="m-0">{% trans "Ultimate Beneficial Owners" %}</h3>
+            <a href="{% url 'customers:ownership_mgmt_add_ubo' pk=company.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i> {% trans "Adicionar" %}</a>
+        </div>
+        <div class="table-responsive contacts-table-wrapper mb-4">
+            <table class="table table-sm table-striped align-middle contacts-table">
+                <thead><tr>
+                    <th>{% trans "Company/Individual" %}</th>
+                    <th>{% trans "Full Name" %}</th>
+                    <th>{% trans "Nationality / Registered Country" %}</th>
+                    <th>{% trans "Country of Residence" %}</th>
+                    <th>{% trans "Government Official / State Owned Entity" %}</th>
+                    <th>{% trans "Percentage of Ownership" %}</th>
+                    <th class="text-end actions-col">{% trans "Ações" %}</th>
+                </tr></thead>
+                <tbody>
+                {% if company.ownership_management %}
+                    {% for it in company.ownership_management.ultimate_beneficial_owners.all %}
+                        <tr>
+                            <td>{{ it.company_individual }}</td><td>{{ it.full_name }}</td>
+                            <td>{{ it.nationality_registered_country }}</td><td>{{ it.country_of_residence }}</td>
+                            <td>{{ it.government_official_state_owned_entity|default:'-' }}</td>
+                            <td>{{ it.percentage_of_ownership }}%</td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a class="btn btn-outline-secondary" href="{% url 'customers:ownership_mgmt_edit_ubo' pk=company.pk item_pk=it.pk %}">{% trans "Editar" %}</a>
+                                    <a class="btn btn-outline-danger" href="{% url 'customers:ownership_mgmt_del_ubo' pk=company.pk item_pk=it.pk %}">{% trans "Excluir" %}</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="7" class="text-center text-muted">{% trans "Nenhum item." %}</td></tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="7" class="text-center text-muted">{% trans "Nenhum item." %}</td></tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Major Shareholders #}
+        <div class="d-flex justify-content-between align-items-center mb-2 contacts-header">
+            <h3 class="m-0">{% trans "Major Shareholders" %}</h3>
+            <a href="{% url 'customers:ownership_mgmt_add_shareholder' pk=company.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i> {% trans "Adicionar" %}</a>
+        </div>
+        <div class="table-responsive contacts-table-wrapper mb-4">
+            <table class="table table-sm table-striped align-middle contacts-table">
+                <thead><tr>
+                    <th>{% trans "Company/Individual" %}</th>
+                    <th>{% trans "Name of Individual / Company" %}</th>
+                    <th>{% trans "Nationality or Registered Country" %}</th>
+                    <th>{% trans "Address / Registered Business Address" %}</th>
+                    <th>{% trans "Type of Relationship" %}</th>
+                    <th>{% trans "Government Official / State Owned Entity" %}</th>
+                    <th>{% trans "Percentage of Ownership" %}</th>
+                    <th class="text-end actions-col">{% trans "Ações" %}</th>
+                </tr></thead>
+                <tbody>
+                {% if company.ownership_management %}
+                    {% for it in company.ownership_management.major_shareholders.all %}
+                        <tr>
+                            <td>{{ it.company_individual }}</td><td>{{ it.name_of_individual_company }}</td>
+                            <td>{{ it.nationality_registered_country }}</td><td>{{ it.address_registered_business_address|truncatechars:50 }}</td>
+                            <td>{{ it.type_of_relationship }}</td>
+                            <td>{{ it.government_official_state_owned_entity|default:'-' }}</td>
+                            <td>{{ it.percentage_of_ownership }}%</td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a class="btn btn-outline-secondary" href="{% url 'customers:ownership_mgmt_edit_shareholder' pk=company.pk item_pk=it.pk %}">{% trans "Editar" %}</a>
+                                    <a class="btn btn-outline-danger" href="{% url 'customers:ownership_mgmt_del_shareholder' pk=company.pk item_pk=it.pk %}">{% trans "Excluir" %}</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="8" class="text-center text-muted">{% trans "Nenhum item." %}</td></tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="8" class="text-center text-muted">{% trans "Nenhum item." %}</td></tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Government Official Interaction inline (unified with main form) #}
+        <div class="mb-3">
+            {% if goi_form %}
+                <div class="mb-2">
+                    <label class="form-label">{{ goi_form.needs_to_interact.label }}</label>
+                    <div class="radio-group">{{ goi_form.needs_to_interact }}</div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">{{ goi_form.details.label }}</label>
+                    {{ goi_form.details }}
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">{{ goi_form.has_commercial_advantage.label }}</label>
+                    <div class="radio-group">{{ goi_form.has_commercial_advantage }}</div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">{{ goi_form.commercial_advantage_details.label }}</label>
+                    {{ goi_form.commercial_advantage_details }}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mt-3 p-3" style="background:#f8f9fa;border:1px solid #eee;border-radius:8px;">
+            <strong>{% trans "Government Official" %}*</strong>:
+            <div class="small text-muted">
+                {% trans "An official or employee of any government, or any agency, ministry or department of the government (of any level)." %}<br>
+                {% trans "Any individual acting in an official capacity for a government regardless of rank or position." %}<br>
+                {% trans "Official or employee of a company wholly or partially state-owned." %}<br>
+                {% trans "A political party or official of a political party." %}<br>
+                {% trans "A candidate for political office." %}<br>
+                {% trans "Officer or employee of a public international organization, such as the United Nations or the World Bank." %}<br>
+                {% trans "Immediate family member of any of the above." %}
+            </div>
+        </div>
+    {% endif %}
+    {# A tabela de relacionamentos prévios agora aparece logo abaixo do campo has_prior_business_relationships no loop do formulário #}
+    {% if current_step_key == 'individual_contacts' %}
+        <div class="d-flex justify-content-between align-items-center mb-3 contacts-header">
+            <h3 class="m-0 d-flex align-items-center gap-2">
+                {% trans "Contatos" %}
+                <span class="badge bg-secondary">{{ company.individual_contacts.all|length }}</span>
+            </h3>
+            <a href="{% url 'customers:individual_contact_add' pk=company.pk %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i> {% trans "Adicionar Contato" %}
+            </a>
+        </div>
+        <div class="table-responsive contacts-table-wrapper">
+            <table class="table table-sm table-striped align-middle contacts-table">
+                <thead>
+                <tr>
+                    <th>{% trans "Nome" %}</th>
+                    <th>{% trans "Cargo" %}</th>
+                    <th>{% trans "Email" %}</th>
+                    <th>{% trans "Telefone" %}</th>
+                    <th class="text-end actions-col">{% trans "Ações" %}</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for ic in company.individual_contacts.all %}
+                    <tr>
+                        <td>{{ ic.first_name }} {{ ic.last_name }}</td>
+                        <td>{{ ic.position_job_title|default:'-' }}</td>
+                        <td>{{ ic.direct_corporate_email|default:'-' }}</td>
+                        <td>{{ ic.direct_corporate_phone|default:'-' }}</td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a class="btn btn-outline-secondary" href="{% url 'customers:individual_contact_edit' pk=company.pk contact_pk=ic.pk %}"><i class="fas fa-pen"></i> {% trans "Editar" %}</a>
+                                <a class="btn btn-outline-danger" href="{% url 'customers:individual_contact_delete' pk=company.pk contact_pk=ic.pk %}"><i class="fas fa-trash"></i> {% trans "Excluir" %}</a>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted">{% trans "Nenhum contato cadastrado." %}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="form-actions">
+            {% if previous_step_slug %}
+                <a href="{% url 'customers:company_onboarding_step' pk=company.pk step_slug=previous_step_slug %}" class="back-button">{% trans "Previous Step" %}</a>
+            {% endif %}
+            <a href="{% url 'customers:company_onboarding_step' pk=company.pk step_slug=next_step_slug %}" class="btn btn-primary">{% trans "Continuar" %}</a>
+        </div>
+        {% comment %} Não renderiza o form padrão nesta etapa {% endcomment %}
+    {% else %}
+    
+    <form method="post" enctype="multipart/form-data"> {# enctype é CRUCIAL para FileFields #}
+        {% csrf_token %}
+
+        {# Exibe erros gerais do formulário, se houver #}
+        {% if form.non_field_errors %}
+            <ul class="errorlist">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {# Itera sobre os campos do formulário para renderização personalizada #}
+        {% if current_step_key == 'compliance' %}
+        <div class="compliance-section">
+        {% endif %}
+{% if current_step_key != 'add_documents' %}
+{% for field in form %}
+            {% if current_step_key == 'compliance' and field.name == 'policy_code_of_ethics' %}
+                <div class="mb-2">
+                    <label class="form-label" style="font-weight:600;">
+                        Which of the following policies and internal processes does the company maintain? (Select one choice - Yes or No - for each of the boxes below).
+                    </label>
+                </div>
+            {% endif %}
+            {% if current_step_key == 'compliance' and field.name == 'training_bribery_corruption' %}
+                <hr class="my-3">
+                <div class="mb-2">
+                    <label class="form-label" style="font-weight:600;">
+                        Does the company provide mandatory training on the following topics? (Select one choice - Yes or No - for every of the boxes below).
+                    </label>
+                </div>
+            {% endif %}
+            <p {% if current_step_key == 'compliance' and field.name == 'due_diligence_process_description' %}id="ddp-desc-wrapper"{% endif %}>
+                {% if field.field.widget.input_type == 'checkbox' %}
+                    {# Lidar com checkboxes (e.g. is_publicly_listed) #}
+                    <label for="{{ field.id_for_label }}">
+                        {{ field }} {{ field.label }}
+                </label>
+                {% elif field.field.widget.input_type == 'radio' %}
+                    {# Lidar com radio buttons (e.g. Qualified, Risk Level) #}
+                    <label>{{ field.label }}</label>
+                    <div class="radio-group">
+                        {{ field }}
+                    </div>
+                    {% if current_step_key == 'compliance' and field.name == 'policy_due_diligence_processes' %}
+                        <span id="ddp-policy-name" data-name="{{ field.html_name }}" hidden></span>
+                    {% endif %}
+                {% else %}
+                    {# Campos padrão (text, email, date, select, file, etc.) #}
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                {% endif %}
+
+                {% if field.help_text %}
+                    <small class="help-text">{{ field.help_text }}</small>
+                {% endif %}
+
+                {% if field.errors %}
+                    <ul class="errorlist">
+                        {% for error in field.errors %}
+                            <li>{{ error }}</li>
+{% endfor %}
+{% endif %}
+                    </ul>
+                {% endif %}
+            </p>
+
+            {% if current_step_key == 'business_information' and field.name == 'has_prior_business_relationships' %}
+                <div class="d-flex justify-content-between align-items-center mb-3 contacts-header">
+                    <h3 class="m-0 d-flex align-items-center gap-2">
+                        {% trans "Relacionamentos Prévios com PRIO" %}
+                        <span class="badge bg-secondary">
+                            {% if company.business_information %}
+                                {{ company.business_information.prior_relationships.all|length }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        </span>
+                    </h3>
+                    <a href="{% url 'customers:prior_business_add' pk=company.pk %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i> {% trans "Adicionar Relacionamento" %}
+                    </a>
+                </div>
+                <div id="prior-relationships-block" class="table-responsive contacts-table-wrapper">
+                    <table class="table table-sm table-striped align-middle contacts-table">
+                        <thead>
+                        <tr>
+                            <th>{% trans "Repsol company name" %}</th>
+                            <th>{% trans "Nature of the agreement" %}</th>
+                            <th>{% trans "Starting date and whether the relationship is maintained today" %}</th>
+                            <th>{% trans "Key contacts" %}</th>
+                            <th class="text-end actions-col">{% trans "Ações" %}</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% if company.business_information %}
+                            {% for rel in company.business_information.prior_relationships.all %}
+                                <tr>
+                                    <td>{{ rel.repsol_company_name }}</td>
+                                    <td>{{ rel.nature_of_agreement|default:'-' }}</td>
+                                    <td>{{ rel.starting_date|date:'d/m/Y'|default:'-' }}</td>
+                                    <td>{{ rel.key_contacts|default:'-' }}</td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a class="btn btn-outline-secondary" href="{% url 'customers:prior_business_edit' pk=company.pk rel_pk=rel.pk %}"><i class="fas fa-pen"></i> {% trans "Editar" %}</a>
+                                            <a class="btn btn-outline-danger" href="{% url 'customers:prior_business_delete' pk=company.pk rel_pk=rel.pk %}"><i class="fas fa-trash"></i> {% trans "Excluir" %}</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="5" class="text-center text-muted">{% trans "Nenhum relacionamento cadastrado." %}</td></tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="5" class="text-center text-muted">{% trans "Nenhum relacionamento cadastrado." %}</td></tr>
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        {% endfor %}
+        {% if current_step_key == 'compliance' %}
+        </div>
+        {% endif %}
+        {% if current_step_key == 'add_documents' %}
+            <div class="d-flex justify-content-between align-items-center mb-2 contacts-header">
+                <h3 class="m-0 d-flex align-items-center gap-2">
+                    {% trans "Documents" %}
+                    <span class="badge bg-secondary">{{ company.kyc_documents.all|length }}</span>
+                </h3>
+                <a href="{% url 'customers:kyc_document_add' pk=company.pk %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i> {% trans "Add Document" %}
+                </a>
+            </div>
+            <div id="document-editor" class="card shadow-sm mb-3" style="display:none;">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <strong id="document-editor-title">{% trans "New Document" %}</strong>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="doc-cancel-btn">{% trans "Cancelar" %}</button>
+                        <button type="submit" class="btn btn-sm btn-primary">{% trans "Save" %}</button>
+                    </div>
+                </div>
+                <div class="card-body" id="document-editor-body"></div>
+            </div>
+            <div class="table-responsive contacts-table-wrapper mb-3">
+                <table class="table table-sm table-striped align-middle contacts-table">
+                    <thead>
+                    <tr>
+                        <th>{% trans "Document Type" %}</th>
+                        <th>{% trans "File" %}</th>
+                        <th>{% trans "Description" %}</th>
+                        <th>{% trans "Uploaded At" %}</th>
+                        <th>{% trans "Uploaded By" %}</th>
+                        <th class="text-end actions-col">{% trans "Ações" %}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% if company.kyc_documents.all|length == 0 %}
+                        <tr><td colspan="6" class="text-center text-muted">{% trans "No documents uploaded yet." %}</td></tr>
+                    {% else %}
+                        {% for doc in company.kyc_documents.all %}
+                            <tr>
+                                <td>{{ doc.get_document_type_display }}</td>
+                                <td>
+                                    {% if doc.file %}
+                                        <a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">
+                                            <i class="fas fa-paperclip me-1"></i>
+                                            {{ doc.file.name|default:'download' }}
+                                        </a>
+                                    {% else %}-{% endif %}
+                                </td>
+                                <td>{{ doc.description|default:'-' }}</td>
+                                <td>{{ doc.uploaded_at|date:'d/m/Y H:i' }}</td>
+                                <td>{{ doc.uploaded_by.get_full_name|default:doc.uploaded_by.username|default:'-' }}</td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a class="btn btn-outline-secondary" href="{% url 'customers:kyc_document_edit' pk=company.pk doc_pk=doc.pk %}">{% trans "Editar" %}</a>
+                                        <a class="btn btn-outline-danger" href="{% url 'customers:kyc_document_delete' pk=company.pk doc_pk=doc.pk %}">{% trans "Excluir" %}</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            <div id="add-doc-form-anchor"></div>
+        {% endif %}
+
+        {# Renderizando FormSets (para múltiplos itens, como Ownership & Management inlines ou KYCDocuments) #}
+        {% if form.management_form %} {# Verifica se é um formset #}
+            {{ form.management_form }}
+            {% for sub_form in form %}
+                <div id="if-{{ sub_form.prefix }}" data-prefix="{{ sub_form.prefix }}" class="inline-form-item {% if current_step_key == 'add_documents' %}{% if sub_form.instance.pk %}existing-doc{% else %}new-doc{% endif %}{% endif %}"
+                     style="border: 1px solid #eee; padding: 15px; margin-bottom: 10px; border-radius: 5px; position: relative;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h3 class="m-0">
+                            {% if current_step_key == 'add_documents' and not sub_form.instance.pk %}
+                                {% trans "New Document" %}
+                            {% else %}
+                                Item {{ forloop.counter }}
+                            {% endif %}
+                        </h3>
+                        <button type="button" class="btn btn-sm btn-outline-danger inline-remove-btn">{% trans "Remover" %}</button>
+                    </div>
+                    {% for sub_field in sub_form %}
+                        {% if sub_field.name == 'DELETE' %}
+                            <span class="inline-delete-hidden" style="display:none;">{{ sub_field }}</span>
+                        {% else %}
+                            <p>
+                                {% if sub_field.field.widget.input_type == 'checkbox' %}
+                                    <label for="{{ sub_field.id_for_label }}">
+                                        {{ sub_field }} {{ sub_field.label }}
+                                    </label>
+                                {% else %}
+                                    <label for="{{ sub_field.id_for_label }}">{{ sub_field.label }}</label>
+                                    {{ sub_field }}
+                                {% endif %}
+                                {% if sub_field.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in sub_field.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </p>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            {# Adicione um botão para "Add More" com JS ou use a extra=1 no formset factory #}
+        {% endif %}
+
+
+        <div class="form-actions d-flex justify-content-between align-items-center gap-2">
+            {% comment %} Link para a etapa anterior {% endcomment %}
+            <div>
+                {% if previous_step_slug %}
+                    <a href="{% url 'customers:company_onboarding_step' pk=company.pk step_slug=previous_step_slug %}" class="btn btn-outline-secondary back-button">{% trans "Previous Step" %}</a>
+                {% endif %}
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary">{% trans "Save & Continue" %}</button>
+            </div>
+        </div>
+        {% if current_step_key == 'compliance' %}
+        <style>
+            #ddp-desc-wrapper{display:none;}
+            /* Visual tweaks for compliance section */
+            .compliance-section { background:#fcfcfc; border:1px solid #eee; border-radius:8px; padding:16px; }
+            .compliance-section p { margin-bottom: 10px; }
+            .compliance-section .radio-group { display:flex; gap:16px; flex-wrap:wrap; }
+        </style>
+        <script>
+            (function() {
+                function truthy(val){
+                    var v = (val==null? '': String(val)).trim().toLowerCase();
+                    return v === 'true' || v === '1' || v === 'yes' || v === 'sim' || v === 'on';
+                }
+                function getPolicyInputs() {
+                    var marker = document.getElementById('ddp-policy-name');
+                    if (marker && marker.dataset && marker.dataset.name) {
+                        var nm = marker.dataset.name;
+                        var found = document.querySelectorAll("input[name='" + nm + "']");
+                        if (found && found.length) return Array.from(found);
+                    }
+                    // Fallbacks (prefix/suffix searches)
+                    var suffix = document.querySelectorAll("input[name$='policy_due_diligence_processes']");
+                    if (suffix && suffix.length) return Array.from(suffix);
+                    var contains = document.querySelectorAll("input[id*='policy_due_diligence_processes']");
+                    return Array.from(contains);
+                }
+                function getPolicyValue() {
+                    var inputs = getPolicyInputs();
+                    if (!inputs.length) return false;
+                    // If it's checkbox, use checked; if radios, use checked value.
+                    var type = inputs[0].type;
+                    if (type === 'checkbox') {
+                        return !!inputs[0].checked;
+                    }
+                    for (var i=0;i<inputs.length;i++){
+                        if (inputs[i].checked) return truthy(inputs[i].value);
+                    }
+                    return false;
+                }
+                function toggleDueDiligenceDesc() {
+                    var wrapper = document.getElementById('ddp-desc-wrapper');
+                    if (!wrapper) return;
+                    wrapper.style.display = getPolicyValue() ? 'block' : 'none';
+                }
+                // Run immediately (elements already exist above this script)
+                toggleDueDiligenceDesc();
+                // Bind listeners to all relevant inputs
+                var inputs = getPolicyInputs();
+                inputs.forEach(function(el){
+                    el.addEventListener('change', toggleDueDiligenceDesc);
+                    el.addEventListener('input', toggleDueDiligenceDesc);
+                });
+            })();
+        </script>
+        {% endif %}
+
+        {% if current_step_key == 'add_documents' %}
+        <style>
+            /* Esconde os formulários de edição existentes e o de novo documento por padrão */
+            .inline-form-item.existing-doc { display:none; }
+            .inline-form-item.new-doc { display:none; }
+        </style>
+        <script>
+            (function(){
+                var btn = document.getElementById('add-doc-btn');
+                function showNewDocForm(){
+                    var el = document.querySelector('.inline-form-item.new-doc');
+                    if (el){ el.style.display = 'block'; el.scrollIntoView({behavior:'smooth', block:'start'}); }
+                }
+                if (btn) btn.addEventListener('click', showNewDocForm);
+                // Se já houver erros no novo subform, exibir automaticamente
+                var hasErrors = document.querySelector('.inline-form-item.new-doc .errorlist li');
+                if (hasErrors) showNewDocForm();
+
+                // Marcar DELETE ao clicar em Excluir na tabela
+                function bindDeleteButtons(){
+                    var buttons = document.querySelectorAll('.doc-delete-btn');
+                    buttons.forEach(function(b){
+                        b.addEventListener('click', function(){
+                            var prefix = b.getAttribute('data-prefix');
+                            if (!prefix) return;
+                            var del = document.getElementById('id_' + prefix + '-DELETE');
+                            var row = b.closest('tr');
+                            if (del) {
+                                del.checked = true;
+                                if (row) { row.style.opacity = '0.5'; row.classList.add('table-danger'); }
+                            }
+                        });
+                    });
+                }
+                bindDeleteButtons();
+            })();
+        </script>
+        {% endif %}
+    </form>
+    {% endif %}
+{% if current_step_key == 'add_documents' %}
+<style>
+  /* Editor area for Add/Edit document */
+  #document-editor .card-body p { margin-bottom: 10px; }
+  .inline-form-item.existing-doc { display:none; }
+  .inline-form-item.new-doc { display:none; }
+  .actions-col { width: 140px; }
+</style>
+<script>
+(function(){
+  var editor = document.getElementById('document-editor');
+  var editorBody = document.getElementById('document-editor-body');
+  var editorTitle = document.getElementById('document-editor-title');
+  var btnAdd = document.getElementById('add-doc-btn');
+  var btnCancel = document.getElementById('doc-cancel-btn');
+
+  function showInEditor(node, title){
+    if (!node || !editor || !editorBody) return;
+    node.style.display = 'block';
+    editorBody.innerHTML = '';
+    editorBody.appendChild(node);
+    if (editorTitle) editorTitle.textContent = title || 'Document';
+    editor.style.display = 'block';
+    editor.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+  function openNew(){
+    var el = document.querySelector('.inline-form-item.new-doc');
+    if (el) showInEditor(el, 'New Document');
+  }
+  if (btnAdd){ btnAdd.addEventListener('click', function(){ setTimeout(openNew, 0); }); }
+  if (btnCancel){ btnCancel.addEventListener('click', function(){ editor.style.display='none'; }); }
+
+  document.querySelectorAll('.doc-edit-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var p = btn.getAttribute('data-prefix');
+      var el = document.getElementById('if-' + p);
+      if (el) showInEditor(el, 'Edit Document');
+    });
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}
+
+{% comment %}
+    Filtro customizado 'last_key' para pegar a última chave de um dicionário fatiado
+    Você precisará deste arquivo client/templatetags/custom_filters.py
+{% endcomment %}
+{# REMOVIDO: {% load custom_filters %} daqui, pois já é carregado pelo base.html #}

@@ -1,0 +1,961 @@
+/* PORTALCLIENTES/static/css/onboarding.css */
+
+/* --- Variáveis CSS (Opcional, mas útil para consistência) --- */
+:root {
+    --prio-green-dark: #1a5e20;
+    --prio-green-medium: #2e7d32;
+    --prio-green-light: #4CAF50;
+    --prio-green-text-light: #e8f5e9;
+    --prio-gray-bg: #f4f7f6;
+    --prio-white: #ffffff;
+    --text-color-dark: #333;
+    --text-color-medium: #555;
+    --border-color-light: #e0e0e0;
+    --shadow-light: rgba(0,0,0,0.08);
+    --shadow-medium: rgba(0,0,0,0.15);
+}
+
+/* --- Base e Estrutura Geral --- */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--prio-gray-bg);
+    color: var(--text-color-dark);
+    line-height: 1.6;
+}
+
+/* --- Sidebar (Menu Lateral) --- */
+.sidebar {
+    width: 250px; /* Reduzido para ser mais compacto */
+    background-color: var(--prio-green-dark);
+    color: var(--prio-white);
+    padding: 20px 15px; /* Ajustado padding lateral */
+    box-shadow: 2px 0 8px var(--shadow-medium);
+    flex-shrink: 0; /* Impede que a sidebar diminua */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.sidebar-logo-text {
+    margin-top: 0;
+    color: var(--prio-green-text-light);
+    font-size: 1.4em; /* Ligeiramente menor */
+    margin-bottom: 8px;
+    width: 100%;
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.sidebar-company-name {
+    font-size: 1.05em; /* Ligeiramente menor */
+    color: var(--prio-green-text-light);
+    margin-bottom: 15px;
+    width: 100%;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* --- Barra de Progresso Horizontal (na Sidebar) --- */
+.progress-bar-container {
+    width: 100%; /* Ocupa a largura total da sidebar */
+    height: 12px; /* Altura mais compacta para barra de percentual */
+    background-color: rgba(255,255,255,0.2); /* Fundo transparente claro */
+    border-radius: 6px; /* Ajustado raio para a nova altura */
+    overflow: hidden;
+    margin-top: 15px;
+    margin-bottom: 20px; /* Adicionado margem inferior para separar da lista de etapas */
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+.progress-bar {
+    height: 100%;
+    background-color: var(--prio-green-light); /* Cor sólida */
+    /* background: linear-gradient(to right, #4CAF50, #8bc34a); */ /* Exemplo de gradiente */
+    width: 0%; /* Será preenchido via JS/Django */
+    text-align: center;
+    line-height: 12px; /* Alinhamento vertical do texto */
+    color: var(--prio-white);
+    font-size: 0.75em; /* Fonte menor para percentual */
+    transition: width 0.5s ease-in-out;
+    font-weight: 500;
+}
+
+/* --- Lista de Etapas (A "barra de progresso" vertical principal) --- */
+.onboarding-steps-list {
+    list-style: none;
+    padding: 0;
+    margin: 0; /* Remove margens padrão */
+    width: 100%;
+}
+.onboarding-steps-list li {
+    margin-bottom: 2px; /* Reduzido de 5px para 2px para máxima compactação */
+}
+.onboarding-steps-list a {
+    color: var(--prio-green-text-light);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    padding: 6px 10px; /* Reduzido de 12px para 6px (vertical) para compactar */
+    border-radius: 4px; /* Ligeiramente menor para se adequar */
+    transition: background-color 0.2s ease, font-weight 0.2s ease, transform 0.1s ease;
+    font-size: 0.85em; /* Ligeiramente menor para caber melhor */
+    white-space: nowrap; /* Impede quebras de linha */
+    overflow: hidden; /* Oculta texto que excede o espaço */
+    text-overflow: ellipsis; /* Adiciona '...' se o texto for muito longo */
+}
+.onboarding-steps-list a:hover {
+    background-color: var(--prio-green-medium);
+    transform: translateX(3px);
+}
+.onboarding-steps-list a.active {
+    background-color: var(--prio-green-light);
+    font-weight: bold;
+    box-shadow: inset 3px 0 0 var(--prio-green-text-light); /* Borda esquerda sutil */
+}
+.onboarding-steps-list .step-number {
+    font-weight: bold;
+    margin-right: 7px; /* Ajustado de 10px para 7px */
+    background-color: rgba(255,255,255,0.15);
+    padding: 2px 6px; /* Reduzido padding do número */
+    border-radius: 3px;
+    font-size: 0.75em; /* Ligeiramente menor */
+    flex-shrink: 0; /* Impede que o número encolha */
+}
+.onboarding-steps-list .step-title-text {
+    flex-grow: 1; /* Permite que o texto cresça */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.onboarding-steps-list .check-icon {
+    margin-left: auto;
+    color: var(--prio-green-text-light);
+    font-size: 1.1em; /* Ligeiramente menor */
+    flex-shrink: 0; /* Impede que o ícone encolha */
+}
+
+/* --- Link "Voltar ao Menu Principal" na Sidebar --- */
+.sidebar .sidebar-back-button {
+    margin-top: 25px; /* Espaço do topo da sidebar */
+    display: block;
+    text-align: center;
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--prio-green-text-light);
+    text-decoration: none;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    font-weight: 500;
+}
+.sidebar .sidebar-back-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+.sidebar .sidebar-back-button.disabled-link {
+    cursor: not-allowed;
+    opacity: 0.6;
+    box-shadow: none;
+}
+
+/* --- Conteúdo Principal (à direita da sidebar) --- */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--prio-white);
+}
+
+/* --- Cabeçalho do Conteúdo Principal --- */
+.header {
+    background-color: var(--prio-white);
+    padding: 15px 30px;
+    border-bottom: 1px solid var(--border-color-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 3px 6px var(--shadow-light);
+    flex-shrink: 0; /* Impede que o cabeçalho encolha */
+}
+.header-title {
+    margin: 0;
+    font-size: 24px;
+    color: #2c3e50; /* Tom de azul escuro */
+    font-weight: 600;
+}
+.prio-logo {
+    height: 40px; /* Ajustado tamanho do logo */
+}
+
+/* --- Área do Formulário --- */
+.form-area {
+    padding: 30px;
+    flex-grow: 1;
+    overflow-y: auto; /* Permite scroll se o formulário for muito longo */
+}
+.form-section {
+    background-color: var(--prio-white);
+    padding: 30px; /* Levemente reduzido de 40px */
+    border-radius: 10px;
+    box-shadow: 0 6px 15px var(--shadow-medium);
+}
+.form-section h2 {
+    color: #34495e; /* Título da seção */
+    margin-top: 0;
+    margin-bottom: 20px; /* Reduzido de 25px */
+    border-bottom: 2px solid #ecf0f1;
+    padding-bottom: 10px;
+    font-size: 1.8em;
+    font-weight: 600;
+}
+
+/* --- Ações do Formulário (Botões) --- */
+.form-actions {
+    margin-top: 25px; /* Reduzido de 30px */
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px; /* Espaço entre botões */
+    padding-top: 15px; /* Adiciona um padding acima dos botões */
+    border-top: 1px solid #eee; /* Linha sutil para separar os botões do formulário */
+}
+.form-actions button,
+.form-actions a.back-button {
+    padding: 10px 22px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.form-actions button {
+    background-color: var(--prio-green-light);
+    color: var(--prio-white);
+    border: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.form-actions button:hover {
+    background-color: var(--prio-green-medium);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+}
+.form-actions a.back-button {
+    background-color: #e9ecef;
+    color: var(--text-color-medium);
+    border: 1px solid #ced4da;
+}
+.form-actions a.back-button:hover {
+    background-color: #dee2e6;
+    transform: translateY(-2px);
+}
+
+/* --- Estilos para Campos de Formulário --- */
+.form-section p {
+    margin-bottom: 15px;
+}
+.form-section label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #444;
+    font-size: 0.9em;
+}
+.form-section input[type="text"],
+.form-section input[type="email"],
+.form-section input[type="url"],
+.form-section input[type="number"],
+.form-section input[type="date"],
+.form-section textarea,
+.form-section select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 0.95em;
+    box-sizing: border-box; /* Garante que padding e border não aumentem a largura total */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    min-height: 38px; /* Altura mínima para campos de texto/input, ajuste se necessário */
+}
+.form-section textarea {
+    min-height: 80px; /* Altura mínima para textareas */
+    resize: vertical; /* Permite redimensionar verticalmente */
+}
+.form-section input[type="text"]:focus,
+.form-section input[type="email"]:focus,
+.form-section input[type="url"]:focus,
+.form-section input[type="number"]:focus,
+.form-section input[type="date"]:focus,
+.form-section textarea:focus,
+.form-section select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    outline: none;
+}
+.form-section input[type="radio"],
+.form-section input[type="checkbox"] { /* Inclui checkbox */
+    margin-right: 6px;
+    vertical-align: middle;
+}
+.form-section .errorlist {
+    color: #dc3545;
+    font-size: 0.8em;
+    margin-top: 3px;
+    list-style: none;
+    padding-left: 0;
+}
+.form-section ul.errorlist {
+    margin-top: 8px;
+    padding-left: 0;
+}
+.form-section ul.errorlist li {
+    margin-bottom: 3px;
+}
+.form-section .help-text {
+    font-size: 0.8em;
+    color: #6c757d;
+    margin-top: 5px;
+    display: block;
+}
+
+/* --- Estilos Específicos para Campos de Rádio/Checkbox --- */
+.radio-group, .checkbox-group { /* Adicionado checkbox-group */
+    display: flex;
+    flex-wrap: wrap; /* Permite quebrar linha em telas menores */
+    gap: 15px; /* Espaço entre opções */
+    margin-top: 3px;
+}
+.radio-group label, .checkbox-group label {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 0;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+/* --- Estilos para FormSets (Itens Inline) --- */
+.inline-form-item {
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+.inline-form-item h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: #495057;
+    font-size: 1.1em;
+    border-bottom: 1px dashed #e9ecef;
+    padding-bottom: 8px;
+    font-weight: 600;
+}
+.inline-form-item p {
+    margin-bottom: 8px;
+}
+
+/* --- Individual Contacts list styling --- */
+.contacts-header h3 {
+    color: #34495e;
+    font-weight: 600;
+}
+.contacts-table-wrapper {
+    background: var(--prio-white);
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    box-shadow: 0 6px 15px var(--shadow-light);
+}
+.contacts-table thead th {
+    background-color: #f3f6f5;
+    color: #475861;
+    border-bottom: 1px solid var(--border-color-light);
+}
+.contacts-table td, .contacts-table th {
+    vertical-align: middle;
+}
+.contacts-table .actions-col {
+    width: 200px;
+}
+.contacts-table .btn-group .btn {
+    min-width: 90px;
+}
+
+/* --- Responsividade Básica (Exemplo) --- */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+    }
+    .sidebar {
+        width: 100%;
+        padding: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .sidebar h2, .sidebar h3 {
+        text-align: left;
+    }
+    .onboarding-steps-list {
+        display: flex; /* Transforma a lista em linha */
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 10px;
+    }
+    .onboarding-steps-list li {
+        width: auto;
+        margin: 0 5px 5px 0; /* Espaçamento entre os itens na linha */
+    }
+    .onboarding-steps-list a {
+        padding: 5px 8px; /* Menor padding para os itens em linha */
+        font-size: 0.8em;
+    }
+    .sidebar .sidebar-back-button {
+        margin-top: 15px;
+        width: 100%;
+    }
+    .header {
+        padding: 10px 15px;
+    }
+    .header-title {
+        font-size: 20px;
+    }
+    .prio-logo {
+        height: 35px;
+    }
+    .progress-bar-area {
+        padding: 8px 15px;
+    }
+    .form-area {
+        padding: 15px;
+    }
+    .form-section {
+        padding: 20px;
+    }
+    .form-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+.form-actions button,
+.form-actions a.back-button {
+    width: 100%;
+}
+}
+
+/* --- Botões padronizados (todas as etapas) --- */
+.form-actions {
+    margin-top: 18px;
+}
+.form-actions .btn {
+    min-width: 160px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    box-shadow: 0 2px 6px var(--shadow-light);
+}
+.btn-primary {
+    background-color: var(--prio-green-medium);
+    border-color: var(--prio-green-medium);
+}
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--prio-green-dark);
+    border-color: var(--prio-green-dark);
+}
+.btn-outline-secondary {
+    color: #475861;
+    border-color: #bfc8cf;
+    background-color: transparent;
+}
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus {
+    color: #2f3b43;
+    background-color: #eef3f2;
+    border-color: #aeb7be;
+}
+.back-button {
+    border-radius: 8px;
+}
+
+/* --- Estilo para a Seção da Lista de Clientes --- */
+.list-section {
+    background-color: var(--prio-white);
+    padding: 30px; /* Consistente com form-section */
+    border-radius: 10px;
+    box-shadow: 0 6px 15px var(--shadow-medium); /* Consistente com form-section */
+}
+
+/* Títulos dentro da seção da lista (ex: h2 ou h3 para subtítulos) */
+.list-section h2,
+.list-section h3 {
+    color: #34495e; /* Consistente com form-section h2 */
+    margin-top: 0;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #ecf0f1;
+    padding-bottom: 10px;
+    font-size: 1.8em; /* Ajuste conforme necessário */
+    font-weight: 600;
+}
+
+/* Estilo para a tabela dentro da lista */
+.list-section .table {
+    margin-bottom: 20px; /* Espaço abaixo da tabela antes da paginação/alert */
+}
+
+/* Estilo para a paginação */
+.list-section .pagination .page-item .page-link {
+    color: var(--prio-green-medium);
+    border: 1px solid var(--prio-green-light);
+    border-radius: 5px;
+    margin: 0 2px;
+}
+.list-section .pagination .page-item.active .page-link {
+    background-color: var(--prio-green-medium);
+    border-color: var(--prio-green-medium);
+    color: var(--prio-white);
+}
+.list-section .pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+/* Estilo para o botão "Novo Cliente" na sidebar */
+.sidebar .btn.sidebar-back-button { /* Reutilizando a classe, mas com ajuste de propósito */
+    width: 100%; /* Para preencher a largura da sidebar */
+    margin-bottom: 10px; /* Adiciona espaço entre botões na sidebar */
+}
+
+/* Ajustes gerais do body para o layout flex */
+body {
+    display: flex;
+    flex-direction: row; /* Sidebar e conteúdo principal lado a lado */
+    min-height: 100vh;
+}
+.main-content {
+    flex-grow: 1; /* Ocupa o espaço restante */
+    display: flex;
+    flex-direction: column;
+}
+.header {
+    flex-shrink: 0; /* Garante que o cabeçalho não encolha */
+}
+.form-area {
+    flex-grow: 1; /* Permite que a área do formulário/lista ocupe o espaço restante e seja scrollável */
+    overflow-y: auto;
+}
+
+/* --- Variáveis CSS (Opcional, mas útil para consistência) --- */
+:root {
+    --prio-green-dark: #1a5e20;
+    --prio-green-medium: #2e7d32;
+    --prio-green-light: #4CAF50;
+    --prio-green-text-light: #e8f5e9;
+    --prio-gray-bg: #f4f7f6;
+    --prio-white: #ffffff;
+    --text-color-dark: #333;
+    --text-color-medium: #555;
+    --border-color-light: #e0e0e0;
+    --shadow-light: rgba(0,0,0,0.08);
+    --shadow-medium: rgba(0,0,0,0.15);
+}
+
+/* --- Base e Estrutura Geral --- */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    display: flex; /* ATENÇÃO: ESSENCIAL PARA O LAYOUT SIDEBAR + CONTEÚDO */
+    min-height: 100vh;
+    background-color: var(--prio-gray-bg);
+    color: var(--text-color-dark);
+    line-height: 1.6;
+}
+
+/* --- Sidebar (Menu Lateral) --- */
+.sidebar {
+    width: 250px; 
+    background-color: var(--prio-green-dark);
+    color: var(--prio-white);
+    padding: 20px 15px;
+    box-shadow: 2px 0 8px var(--shadow-medium);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.sidebar-logo-text {
+    margin-top: 0;
+    color: var(--prio-green-text-light);
+    font-size: 1.4em;
+    margin-bottom: 8px;
+    width: 100%;
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.sidebar-company-name {
+    font-size: 1.05em;
+    color: var(--prio-green-text-light);
+    margin-bottom: 15px;
+    width: 100%;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* --- Barra de Progresso Horizontal (na Sidebar) --- */
+/* Manter se ainda for usada em outras páginas, caso contrário, pode remover ou adaptar */
+.progress-bar-container {
+    width: 100%;
+    height: 12px;
+    background-color: rgba(255,255,255,0.2);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 15px;
+    margin-bottom: 20px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+.progress-bar {
+    height: 100%;
+    background-color: var(--prio-green-light);
+    width: 0%;
+    text-align: center;
+    line-height: 12px;
+    color: var(--prio-white);
+    font-size: 0.75em;
+    transition: width 0.5s ease-in-out;
+    font-weight: 500;
+}
+
+/* --- Lista de Etapas (A "barra de progresso" vertical principal - Manter para onboarding) --- */
+.onboarding-steps-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+.onboarding-steps-list li {
+    margin-bottom: 2px;
+}
+.onboarding-steps-list a {
+    color: var(--prio-green-text-light);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, font-weight 0.2s ease, transform 0.1s ease;
+    font-size: 0.85em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.onboarding-steps-list a:hover {
+    background-color: var(--prio-green-medium);
+    transform: translateX(3px);
+}
+.onboarding-steps-list a.active {
+    background-color: var(--prio-green-light);
+    font-weight: bold;
+    box-shadow: inset 3px 0 0 var(--prio-green-text-light);
+}
+.onboarding-steps-list .step-number {
+    font-weight: bold;
+    margin-right: 7px;
+    background-color: rgba(255,255,255,0.15);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.75em;
+    flex-shrink: 0;
+}
+.onboarding-steps-list .step-title-text {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.onboarding-steps-list .check-icon {
+    margin-left: auto;
+    color: var(--prio-green-text-light);
+    font-size: 1.1em;
+    flex-shrink: 0;
+}
+
+/* --- Link "Voltar ao Menu Principal" na Sidebar (reutilizado como botões gerais) --- */
+.sidebar .sidebar-back-button {
+    margin-top: 15px; /* Ajustado para dar espaço entre eles */
+    display: block;
+    text-align: center;
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--prio-green-text-light);
+    text-decoration: none;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    font-weight: 500;
+}
+.sidebar .sidebar-back-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+.sidebar .sidebar-back-button.disabled-link {
+    cursor: not-allowed;
+    opacity: 0.6;
+    box-shadow: none;
+}
+
+/* --- Conteúdo Principal (à direita da sidebar) --- */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--prio-gray-bg); /* Use a cor de fundo cinza clara aqui */
+}
+
+/* --- Cabeçalho do Conteúdo Principal --- */
+.header {
+    background-color: var(--prio-white);
+    padding: 15px 30px;
+    border-bottom: 1px solid var(--border-color-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 3px 6px var(--shadow-light);
+    flex-shrink: 0;
+}
+.header-title {
+    margin: 0;
+    font-size: 24px;
+    color: #2c3e50;
+    font-weight: 600;
+}
+.prio-logo {
+    height: 40px;
+}
+
+/* --- Área do Formulário / Conteúdo Principal (list-section será aqui) --- */
+.form-area {
+    padding: 30px;
+    flex-grow: 1;
+    overflow-y: auto; /* Permite scroll se o conteúdo for muito longo */
+}
+
+/* --- Estilo para a Seção da Lista de Clientes (NOVA CLASSE) --- */
+.list-section {
+    background-color: var(--prio-white);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 6px 15px var(--shadow-medium);
+}
+
+/* Ajustes para a tabela dentro da lista */
+.list-section .table {
+    margin-bottom: 20px;
+}
+.list-section .table thead th {
+    background-color: var(--prio-green-dark); /* Fundo verde escuro para cabeçalho da tabela */
+    color: var(--prio-white);
+    border-bottom: 1px solid var(--prio-green-medium);
+}
+.list-section .table tbody tr {
+    transition: background-color 0.2s ease;
+}
+.list-section .table tbody tr:hover {
+    background-color: #f0f0f0; /* Um hover sutil nas linhas da tabela */
+}
+.list-section .table td {
+    vertical-align: middle; /* Alinha o conteúdo da célula verticalmente */
+}
+
+/* Estilo para botões de ícone na tabela (NOVA CLASSE) */
+.icon-button {
+    width: 38px; /* Largura e altura fixas para ícone redondo/quadrado */
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0; /* Remove padding para centralizar ícone */
+    border-radius: 50%; /* Faz o botão ser circular */
+    font-size: 1.1em; /* Tamanho do ícone */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.icon-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+
+/* Estilo para a paginação (REVISADO) */
+.list-section .pagination {
+    --bs-pagination-color: var(--prio-green-medium);
+    --bs-pagination-hover-color: var(--prio-green-dark);
+    --bs-pagination-focus-color: var(--prio-green-dark);
+    --bs-pagination-active-bg: var(--prio-green-medium);
+    --bs-pagination-active-border-color: var(--prio-green-medium);
+    --bs-pagination-border-color: var(--border-color-light);
+    --bs-pagination-hover-bg: var(--prio-green-text-light);
+    --bs-pagination-focus-box-shadow: 0 0 0 0.25rem rgba(var(--bs-success-rgb), .25);
+}
+
+/* Estilos para Campos de Formulário (Mantido para consistência) */
+.form-section p {
+    margin-bottom: 15px;
+}
+.form-section label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #444;
+    font-size: 0.9em;
+}
+.form-section input[type="text"],
+.form-section input[type="email"],
+.form-section input[type="url"],
+.form-section input[type="number"],
+.form-section input[type="date"],
+.form-section textarea,
+.form-section select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 0.95em;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    min-height: 38px;
+}
+.form-section textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+.form-section input[type="text"]:focus,
+.form-section input[type="email"]:focus,
+.form-section input[type="url"]:focus,
+.form-section input[type="number"]:focus,
+.form-section input[type="date"]:focus,
+.form-section textarea:focus,
+.form-section select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    outline: none;
+}
+.form-section input[type="radio"],
+.form-section input[type="checkbox"] {
+    margin-right: 6px;
+    vertical-align: middle;
+}
+.form-section .errorlist {
+    color: #dc3545;
+    font-size: 0.8em;
+    margin-top: 3px;
+    list-style: none;
+    padding-left: 0;
+}
+.form-section ul.errorlist {
+    margin-top: 8px;
+    padding-left: 0;
+}
+.form-section ul.errorlist li {
+    margin-bottom: 3px;
+}
+.form-section .help-text {
+    font-size: 0.8em;
+    color: #6c757d;
+    margin-top: 5px;
+    display: block;
+}
+
+/* --- Estilos Específicos para Campos de Rádio/Checkbox --- */
+.radio-group, .checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 3px;
+}
+.radio-group label, .checkbox-group label {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 0;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+/* --- Estilos para FormSets (Itens Inline) --- */
+.inline-form-item {
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+.inline-form-item h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: #495057;
+    font-size: 1.1em;
+    border-bottom: 1px dashed #e9ecef;
+    padding-bottom: 8px;
+    font-weight: 600;
+}
+.inline-form-item p {
+    margin-bottom: 8px;
+}
+
+/* --- Responsividade Básica (Exemplo) --- */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+    }
+    .sidebar {
+        width: 100%;
+        padding: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .sidebar h2, .sidebar h3 {
+        text-align: left;
+    }
+    .onboarding-steps-list {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 10px;
+    }
+    .onboarding-steps-list li {
+        width: auto;
+        margin: 0 5px 5px 0;
+    }
+    .onboarding-steps-list a {
+        padding: 5px 8px;
+        font-size: 0.8em;
+    }
+    .sidebar .sidebar-back-button {
+        margin-top: 15px;
+        width: 100%;
+    }
+    .header {
+        padding: 10px 15px;
+    }
+    .header-title {
+        font-size: 20px;
+    }
+    .prio-logo {
+        height: 35px;
+    }
+    .progress-bar-area { /* Se ainda existir e for usado */
+        padding: 8px 15px;
+    }
+    .form-area {
+        padding: 15px;
+    }
+    .form-section {
+        padding: 20px;
+    }
+    .form-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .form-actions button,
+    .form-actions a.back-button {
+        width: 100%;
+    }
+}

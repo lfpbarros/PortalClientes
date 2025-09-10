@@ -1,0 +1,32 @@
+{% extends 'customers/onboarding/onboarding_base.html' %}
+{% load i18n %}
+
+{% block onboarding_content %}
+  <h2>{{ page_title }}</h2>
+  <div class="mb-3">
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'customers:company_onboarding_step' pk=company.pk step_slug='add_documents' %}">{% trans "Back to Documents" %}</a>
+  </div>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <ul class="errorlist">
+        {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+    {% for field in form %}
+      <p>
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<small class="text-muted d-block">{{ field.help_text }}</small>{% endif %}
+        {% if field.errors %}
+          <ul class="errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+        {% endif %}
+      </p>
+    {% endfor %}
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-secondary" href="{% url 'customers:company_onboarding_step' pk=company.pk step_slug='add_documents' %}">{% trans "Cancelar" %}</a>
+      <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
+    </div>
+  </form>
+{% endblock %}
+

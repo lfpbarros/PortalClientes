@@ -1,0 +1,35 @@
+/* Styles specific to the Due Diligence (RDD) views, aligned with onboarding/dashboard theme */
+
+.rdd-thread-header h4 {
+  color: #2c3e50;
+  margin-bottom: 2px;
+}
+
+.message {
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--prio-white);
+  border: 1px solid var(--border-color-light);
+}
+.message.me {
+  background: #f1f8ff;
+  border-color: #cfe2ff;
+}
+.message.other {
+  background: #f8f9fa;
+}
+
+.attachment-list {
+  margin: 6px 0 0;
+}
+.attachment-list li {
+  margin-bottom: 2px;
+}
+
+@media (max-width: 768px) {
+  .rdd-thread-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+

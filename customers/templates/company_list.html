@@ -1,0 +1,459 @@
+{% load static %}
+{% load i18n %}
+
+{% block extra_head %}
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'css/onboarding.css' %}">
+{% endblock %}
+
+{% block body_content %}
+  <div class="sidebar">
+    <h2 class="sidebar-logo-text">{% trans "Portal Clientes" %}</h2>
+    <h3 class="sidebar-company-name">{% trans "Gerenciamento" %}</h3>
+
+    <a href="{% url 'customers:company_onboarding_create' %}" class="btn sidebar-back-button mt-4">
+      <i class="fas fa-plus me-2"></i> {% trans "Novo Cliente" %}
+    </a>
+    <a href="{% url 'customers:dashboard' %}" class="btn sidebar-back-button mt-2">
+      <i class="fas fa-chart-line me-2"></i> {% trans "Dashboard" %}
+    </a>
+    <div class="mt-auto w-100">
+      <a href="{% url 'logout' %}" class="btn sidebar-back-button mt-3">
+        <i class="fas fa-sign-out-alt me-2"></i> {% trans "Sair" %}
+      </a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <header class="header">
+      <h1 class="header-title">{% trans "Clientes Cadastrados" %}</h1>
+      <img src="{% static 'images/logo.png' %}" alt="Logo PRIO" class="prio-logo">
+    </header>
+
+    <div class="form-area">
+      <form method="get" class="row g-2 align-items-end mb-3">
+        <div class="col-sm-5 col-md-6 col-lg-6">
+          <label class="form-label" for="filter-q">{% trans "Buscar" %}</label>
+          <input id="filter-q" type="text" name="q" value="{{ filter_q }}" class="form-control" placeholder="{% trans 'Nome ou endereço' %}">
+        </div>
+        <div class="col-sm-3 col-md-2 col-lg-2">
+          <label class="form-label" for="filter-status">{% trans "Status" %}</label>
+          <select id="filter-status" name="status" class="form-select">
+            <option value="">{% trans "Todos" %}</option>
+            <option value="concluido" {% if filter_status == 'concluido' %}selected{% endif %}>{% trans "Concluído" %}</option>
+            <option value="pendente" {% if filter_status == 'pendente' %}selected{% endif %}>{% trans "Pendente" %}</option>
+          </select>
+        </div>
+        <div class="col-sm-3 col-md-2 col-lg-2">
+          <label class="form-label" for="filter-area">{% trans "Área" %}</label>
+          <select id="filter-area" name="area" class="form-select">
+            <option value="">{% trans "Todas" %}</option>
+            <option value="compliance" {% if filter_area == 'compliance' %}selected{% endif %}>{% trans "Compliance" %}</option>
+            <option value="financeiro" {% if filter_area == 'financeiro' %}selected{% endif %}>{% trans "Financeiro" %}</option>
+            <option value="trading" {% if filter_area == 'trading' %}selected{% endif %}>{% trans "Trading" %}</option>
+            <option value="suprimentos" {% if filter_area == 'suprimentos' %}selected{% endif %}>{% trans "Suprimentos" %}</option>
+          </select>
+        </div>
+        <div class="col-sm-12 col-md-2 col-lg-2 d-flex gap-2">
+          <button type="submit" class="btn btn-primary w-100">{% trans "Filtrar" %}</button>
+          <a href="{% url 'customers:company_list' %}" class="btn btn-outline-secondary">{% trans "Limpar" %}</a>
+        </div>
+      </form>
+      {% if messages %}
+        <div class="mb-3">
+          {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="list-section">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover align-middle">
+            <thead class="table-dark">
+              <tr>
+                <th>{% trans "Nome da Empresa" %}</th>
+                <th>{% trans "Endereço Principal" %}</th>
+                <th>{% trans "Criado em" %}</th>
+                <th>{% trans "Criado por" %}</th>
+                <th>{% trans "Status Geral" %}</th>
+                {% if compliance_group_name in user_groups %}<th class="text-center">{% trans "Compliance" %}</th>{% endif %}
+                {% if financeiro_group_name in user_groups %}<th class="text-center">{% trans "Financeiro" %}</th>{% endif %}
+                {% if trading_group_name in user_groups %}<th class="text-center">{% trans "Trading" %}</th>{% endif %}
+                {% if trading_group_name in user_groups or suprimentos_group_name in user_groups %}<th class="text-center">{% trans "Análise Final" %}</th>{% endif %}
+                {% if suprimentos_group_name in user_groups %}<th class="text-center">{% trans "Suprimentos" %}</th>{% endif %}
+                <th class="text-center">{% trans "Ações" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for company in companies %}
+              <tr>
+                <td>{{ company.full_company_name }}</td>
+                <td>{{ company.registered_business_address|default:"—" }}</td>
+                <td>{{ company.created_at|date:"d/m/Y H:i" }}</td>
+                <td>{{ company.created_by.get_full_name|default:company.created_by.username }}</td>
+                <td>
+                  {% with sc=company.status_control %}
+                    {# Removido: ícone de anexo não deve aparecer na coluna de Status Geral #}
+                    {% if sc and not sc.compliance_qualified %}
+                      <span class="badge bg-danger" data-bs-toggle="tooltip" title="{{ sc.pending_details|default:_('Cliente não cadastrado') }}">{% trans "Cliente não cadastrado" %}</span>
+                    {% elif sc and sc.pending_details and 'Cliente não cadastrado' in sc.pending_details %}
+                      <span class="badge bg-danger" data-bs-toggle="tooltip" title="{{ sc.pending_details }}">{% trans "Cliente não cadastrado" %}</span>
+                    {% elif sc and sc.trading_reject_reason %}
+                      <span class="badge bg-danger" data-bs-toggle="tooltip" title="{{ sc.trading_reject_reason }}">{% trans "Cliente não cadastrado" %}</span>
+                    {% elif sc and sc.client_onboarding_finished %}
+                      <span class="badge bg-success">{% trans "Concluído" %}</span>
+                    {% elif sc and sc.is_pending %}
+                      <span class="badge bg-warning text-dark" data-bs-toggle="tooltip" title="{{ sc.pending_details|default:_('Em análise') }}">{% trans "Pendente" %}</span>
+                      <div class="small text-muted mt-1">
+                        {% if sc.pending_owner %}{{ sc.pending_owner }}{% endif %}{% if sc.pending_details %} - {{ sc.pending_details }}{% endif %}
+                      </div>
+                    {% else %}
+                      <span class="badge bg-secondary">{% trans "Em progresso" %}</span>
+                    {% endif %}
+                  {% endwith %}
+                </td>
+
+                {% if compliance_group_name in user_groups %}
+                <td class="text-center">
+                  {% with sc=company.status_control %}
+                    {% if not company.has_min_requirements %}
+                      <span class="badge bg-secondary" title="{% trans 'Aguardar dados do cliente' %}">{% trans "Aguardar dados" %}</span>
+                    {% elif sc and sc.compliance_qualified %}
+                      <span class="badge bg-success">{% trans "Aprovado" %}</span>
+                      <div class="small text-muted mt-1">
+                        {% if sc.last_updated_by %}{% trans "por" %} {{ sc.last_updated_by.get_full_name|default:sc.last_updated_by.username }} - {% endif %}{{ sc.updated_at|date:"d/m/Y H:i" }}
+                      </div>
+                    {% elif sc and not sc.compliance_qualified and sc.pending_owner == 'COMPLIANCE' %}
+                      <span class="badge bg-danger" data-bs-toggle="tooltip" title="{{ sc.pending_details|default:_('Não aprovado') }}">{% trans "Reprovado" %}</span>
+                      <div class="small text-muted mt-1">
+                        {% if sc.last_updated_by %}{% trans "por" %} {{ sc.last_updated_by.get_full_name|default:sc.last_updated_by.username }} - {% endif %}{{ sc.updated_at|date:"d/m/Y H:i" }}
+                      </div>
+                      <div class="btn-row d-flex justify-content-start gap-2 align-items-center flex-nowrap mt-1">
+                        <form class="m-0 p-0 d-inline-block" method="post" action="{% url 'customers:compliance_decision' pk=company.pk decision='approve' %}">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-outline-success" title="{% trans 'Aprovar Compliance' %}">
+                            <i class="fas fa-check"></i> {% trans "Aprovar" %}
+                          </button>
+                        </form>
+                      </div>
+                    {% else %}
+                      <div class="btn-row d-flex justify-content-start gap-2 align-items-center flex-nowrap">
+                        <form class="m-0 p-0 d-inline-block" method="post" action="{% url 'customers:compliance_decision' pk=company.pk decision='approve' %}">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-outline-success" title="{% trans 'Aprovar Compliance' %}">
+                            <i class="fas fa-check"></i> {% trans "Aprovar" %}
+                          </button>
+                        </form>
+                        <form class="m-0 p-0 d-inline-block" method="post" action="{% url 'customers:compliance_decision' pk=company.pk decision='reject' %}">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-outline-danger" title="{% trans 'Reprovar Compliance' %}">
+                            <i class="fas fa-times"></i> {% trans "Reprovar" %}
+                          </button>
+                        </form>
+                      </div>
+                    {% endif %}
+                  {% endwith %}
+                </td>
+                {% endif %}
+
+                {% if financeiro_group_name in user_groups %}
+                <td class="text-center">
+                  {% with sc=company.status_control %}
+                    {% if not company.has_min_requirements %}
+                      <span class="badge bg-secondary" title="{% trans 'Aguardar dados do cliente' %}">{% trans "Aguardar dados" %}</span>
+                    {% elif sc and sc.treasury_qualified %}
+                      <span class="badge bg-success">{% trans "Aprovado" %}</span>
+                      <div class="small text-muted mt-1">
+                        {% if sc.last_updated_by %}{% trans "por" %} {{ sc.last_updated_by.get_full_name|default:sc.last_updated_by.username }} - {% endif %}{{ sc.updated_at|date:"d/m/Y H:i" }}
+                      </div>
+                    {% elif sc and not sc.treasury_qualified and sc.treasury_risk %}
+                      <span class="badge bg-danger" data-bs-toggle="tooltip" title="{{ sc.treasury_risk }}">{% trans "Reprovado" %}</span>
+                      <div class="small text-muted mt-1">{% trans "Risco" %}: {{ sc.treasury_risk }}</div>
+                      <div class="btn-row d-flex justify-content-start gap-2 align-items-center flex-nowrap mt-1">
+                        <form class="m-0 p-0 d-inline-block" method="post" action="{% url 'customers:finance_decision' pk=company.pk decision='approve' %}">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-outline-success" title="{% trans 'Aprovar' %}">
+                            <i class="fas fa-check"></i> {% trans "Aprovar" %}
+                          </button>
+                        </form>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#financeRejectModal-{{ company.pk }}">
+                          <i class="fas fa-times"></i> {% trans "Reprovar" %}
+                        </button>
+                      </div>
+                    {% else %}
+                      <div class="btn-row d-flex justify-content-start gap-2 align-items-center flex-nowrap">
+                        <form class="m-0 p-0 d-inline-block" method="post" action="{% url 'customers:finance_decision' pk=company.pk decision='approve' %}">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-outline-success" title="{% trans 'Aprovar' %}">
+                            <i class="fas fa-check"></i> {% trans "Aprovar" %}
+                          </button>
+                        </form>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#financeRejectModal-{{ company.pk }}">
+                          <i class="fas fa-times"></i> {% trans "Reprovar" %}
+                        </button>
+                      </div>
+                    {% endif %}
+                  {% endwith %}
+                  
+                  <!-- Finance Reject Modal -->
+                  <div class="modal fade" id="financeRejectModal-{{ company.pk }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title">{% trans "Reprovar Financeiro" %}</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form method="post" action="{% url 'customers:finance_decision' pk=company.pk decision='reject' %}">
+                          {% csrf_token %}
+                          <div class="modal-body">
+                            <label class="form-label" for="risk-{{ company.pk }}">{% trans "Risco (obrigatório)" %}</label>
+                            <input id="risk-{{ company.pk }}" type="text" name="risk" class="form-control" required>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                            <button type="submit" class="btn btn-danger">{% trans "Reprovar" %}</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                {% endif %}
+
+                {% if trading_group_name in user_groups %}
+                <td class="text-center">
+                  {% with sc=company.status_control %}
+                    {% if not sc or not sc.compliance_qualified %}
+                      <span class="badge bg-secondary" title="{% trans 'Aguardando Financeiro' %}">{% trans "Aguardar" %}</span>
+                    {% elif sc and sc.trading_qualified %}
+                      <span class="badge bg-success">{% trans "Validado" %}</span>
+                      <div class="small text-muted mt-1">
+                        {% if sc.last_updated_by %}{% trans "por" %} {{ sc.last_updated_by.get_full_name|default:sc.last_updated_by.username }} - {% endif %}{{ sc.updated_at|date:"d/m/Y H:i" }}
+                      </div>
+                    {% elif sc and not sc.trading_qualified and sc.trading_reject_reason %}
+                      <span class="badge bg-danger" data-bs-toggle="tooltip" title="{{ sc.trading_reject_reason }}">{% trans "Não validado" %}</span>
+                      <div class="small text-muted mt-1">{% trans "Motivo" %}: {{ sc.trading_reject_reason }}</div>
+                      <div class="btn-row d-flex justify-content-start gap-2 align-items-center flex-nowrap mt-1">
+                        <form class="m-0 p-0 d-inline-block" method="post" action="{% url 'customers:trading_decision' pk=company.pk decision='approve' %}">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-outline-success" title="{% trans 'Validar Trading' %}">
+                            <i class="fas fa-check"></i> {% trans "Validar" %}
+                          </button>
+                        </form>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#tradingRejectModal-{{ company.pk }}">
+                          <i class="fas fa-times"></i> {% trans "Recusar" %}
+                        </button>
+                      </div>
+                    {% else %}
+                      <div class="btn-row d-flex justify-content-start gap-2 align-items-center flex-nowrap">
+                        <form class="m-0 p-0 d-inline-block" method="post" action="{% url 'customers:trading_decision' pk=company.pk decision='approve' %}">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-outline-success" title="{% trans 'Validar Trading' %}">
+                            <i class="fas fa-check"></i> {% trans "Validar" %}
+                          </button>
+                        </form>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#tradingRejectModal-{{ company.pk }}">
+                          <i class="fas fa-times"></i> {% trans "Recusar" %}
+                        </button>
+                      </div>
+                    {% endif %}
+                  {% endwith %}
+
+                  <!-- Trading Reject Modal -->
+                  <div class="modal fade" id="tradingRejectModal-{{ company.pk }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title">{% trans "Recusar Trading" %}</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form method="post" action="{% url 'customers:trading_decision' pk=company.pk decision='reject' %}">
+                          {% csrf_token %}
+                          <div class="modal-body">
+                            <label class="form-label" for="reason-{{ company.pk }}">{% trans "Motivo (opcional)" %}</label>
+                            <input id="reason-{{ company.pk }}" type="text" name="reason" class="form-control">
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancelar" %}</button>
+                            <button type="submit" class="btn btn-danger">{% trans "Recusar" %}</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                {% endif %}
+
+                {% if trading_group_name in user_groups or suprimentos_group_name in user_groups %}
+                <td class="text-center">
+                  {% with sc=company.status_control %}
+                    {% if sc and sc.compliance_qualified and sc.treasury_qualified or sc and sc.trading_qualified %}
+                      {% if sc.pending_owner == 'TRADING' %}
+                        <div class="btn-row d-flex justify-content-start align-items-center gap-2 flex-nowrap">
+                          <!-- Upload Final Analysis Attachment -->
+                          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#finalAnalysisUpload-{{ company.pk }}">
+                            <i class="fas fa-paperclip"></i> {% trans 'Enviar Anexo' %}
+                          </button>
+                          {% with faa=company.latest_final_analysis_attachment %}
+                            {% if faa %}
+                              <a href="{{ faa.file.url }}" target="_blank" class="btn btn-link btn-sm p-0" title="{% trans 'Ver Anexo' %}"><i class="fas fa-paperclip me-1"></i> {% trans 'Anexo' %}</a>
+                            {% endif %}
+                            {% if faa %}
+                              {% if faa.approved %}
+                                <span class="badge bg-success">{% trans 'Aprovado' %}</span>
+                              {% else %}
+                                <span class="badge bg-warning text-dark">{% trans 'Pendente' %}</span>
+                                {% if trading_group_name in user_groups %}
+                                  <form class="m-0 p-0 d-inline-block" method="post" action="{% url 'customers:final_analysis_attachment_approve' pk=faa.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-success ms-1" title="{% trans 'Aprovar Anexo' %}"><i class="fas fa-check"></i></button>
+                                  </form>
+                                {% endif %}
+                              {% endif %}
+                            {% endif %}
+                          {% endwith %}
+                          {% if trading_group_name in user_groups %}
+                          <form class="m-0 p-0 d-inline-block" method="post" action="{% url 'customers:final_analysis_decision' pk=company.pk decision='approve' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-success"><i class="fas fa-check"></i> {% trans 'Aprovar' %}</button>
+                          </form>
+                          {% endif %}
+                        </div>
+                        <div class="small text-muted mt-1">{% trans 'Aguardando análise final (Trading).' %}</div>
+                        <!-- Final Analysis Upload Modal -->
+                        <div class="modal fade" id="finalAnalysisUpload-{{ company.pk }}" tabindex="-1" aria-hidden="true">
+                          <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                              <div class="modal-header">
+                                <h5 class="modal-title">{% trans 'Enviar Anexo - Análise Final' %}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <form method="post" enctype="multipart/form-data" action="{% url 'customers:final_analysis_upload' pk=company.pk %}">
+                                {% csrf_token %}
+                                <div class="modal-body">
+                                  <label class="form-label" for="faa-file-{{ company.pk }}">{% trans 'Arquivo' %}</label>
+                                  <input id="faa-file-{{ company.pk }}" type="file" name="file" class="form-control" required>
+                                  <label class="form-label mt-2" for="faa-notes-{{ company.pk }}">{% trans 'Observações (opcional)' %}</label>
+                                  <input id="faa-notes-{{ company.pk }}" type="text" name="notes" class="form-control">
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans 'Cancelar' %}</button>
+                                  <button type="submit" class="btn btn-primary">{% trans 'Enviar' %}</button>
+                                </div>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
+                      {% elif sc.pending_owner == 'SUPRIMENTOS' %}
+                        <span class="badge bg-info text-dark">{% trans 'Aguardando Suprimentos' %}</span>
+                        {% with faa=company.latest_final_analysis_attachment %}
+                          {% if faa %}
+                            <a href="{{ faa.file.url }}" target="_blank" class="btn btn-link btn-sm p-0 ms-2 align-baseline" title="{% trans 'Ver Anexo' %}"><i class="fas fa-paperclip me-1"></i></a>
+                          {% endif %}
+                        {% endwith %}
+                      {% elif sc.client_onboarding_finished %}
+                        <span class="badge bg-success">{% trans 'Análise Final Aprovada' %}</span>
+                        {% with faa=company.latest_final_analysis_attachment %}
+                          {% if faa %}
+                            <a href="{{ faa.file.url }}" target="_blank" class="btn btn-link btn-sm p-0 ms-2 align-baseline" title="{% trans 'Ver Anexo' %}"><i class="fas fa-paperclip me-1"></i></a>
+                          {% endif %}
+                        {% endwith %}
+                      {% else %}
+                        <span class="badge bg-secondary">{% trans 'Não iniciado' %}</span>
+                      {% endif %}
+                    {% else %}
+                      <span class="badge bg-secondary">{% trans 'Não disponível' %}</span>
+                    {% endif %}
+                  {% endwith %}
+                </td>
+                {% endif %}
+
+                {% if suprimentos_group_name in user_groups %}
+                <td class="text-center">
+                  {% with sc=company.status_control %}
+                    {% if sc and sc.client_onboarding_finished %}
+                      <span class="badge bg-success"><i class="fas fa-file-invoice"></i> {% trans 'Cadastrado no SAP' %}</span>
+                    {% elif sc and sc.pending_owner == 'SUPRIMENTOS' %}
+                      <form class="m-0 p-0 d-inline-block" method="post" action="{% url 'customers:suprimentos_register_sap' pk=company.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-primary" title="{% trans 'Marcar como Cadastrado no SAP' %}"><i class="fas fa-file-invoice"></i> {% trans 'Cadastrar no SAP' %}</button>
+                      </form>
+                    {% else %}
+                      <span class="badge bg-secondary">{% trans 'Aguardando' %}</span>
+                    {% endif %}
+                  {% endwith %}
+                </td>
+                {% endif %}
+
+                <td class="text-center">
+                  <div class="btn-row d-flex justify-content-start align-items-center gap-2 flex-nowrap">
+                    <a href="{% url 'customers:company_detail' pk=company.pk %}" class="btn btn-sm btn-info icon-button" title="{% trans 'Ver Detalhes' %}">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="{% url 'customers:company_onboarding_step' pk=company.pk step_slug='general_information' %}" class="btn btn-sm btn-warning icon-button" title="{% trans 'Continuar Onboarding' %}">
+                      <i class="fas fa-edit"></i>
+                    </a>
+                    {% if compliance_group_name in user_groups %}
+                    <a href="{% url 'customers:company_onboarding_step' pk=company.pk step_slug='compliance' %}" class="btn btn-sm btn-success icon-button" title="{% trans 'Ir para Compliance' %}">
+                      <i class="fas fa-user-shield"></i>
+                    </a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="9" class="text-center text-muted">{% trans "Nenhuma empresa encontrada." %}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if is_paginated %}
+        <nav aria-label="Page navigation" class="mt-3">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?{% if current_filters %}{{ current_filters }}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                  <span aria-hidden="true">&laquo;</span>
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+            {% endif %}
+            {% for num in paginator.page_range %}
+              {% if num == page_obj.number %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+              {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+                <li class="page-item"><a class="page-link" href="?{% if current_filters %}{{ current_filters }}&{% endif %}page={{ num }}">{{ num }}</a></li>
+              {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?{% if current_filters %}{{ current_filters }}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Next">
+                  <span aria-hidden="true">&raquo;</span>
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+      tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl); });
+    });
+  </script>
+{% endblock %}

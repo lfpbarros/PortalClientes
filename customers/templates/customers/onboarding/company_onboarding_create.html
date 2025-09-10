@@ -1,0 +1,39 @@
+{% extends 'customers/onboarding/onboarding_base.html' %}
+{% load static %}
+
+{% block onboarding_content %}
+    <h2>Start New Company Onboarding</h2>
+    <p>Please provide the basic information to create a new company record and begin the KYC Questionnaire.</p>
+    <form method="post">
+        {% csrf_token %}
+        
+        {% for field in form %}
+            <p>
+                {% if field.field.widget.input_type == 'checkbox' %}
+                    <label for="{{ field.id_for_label }}">
+                        {{ field }} {{ field.label }}
+                    </label>
+                {% else %}
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                {% endif %}
+
+                {% if field.help_text %}
+                    <small class="help-text">{{ field.help_text }}</small>
+                {% endif %}
+
+                {% if field.errors %}
+                    <ul class="errorlist">
+                        {% for error in field.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </p>
+        {% endfor %}
+
+        <div class="form-actions" style="text-align: center;">
+            <button type="submit" class="btn btn-primary">Create Company & Start Onboarding</button>
+        </div>
+    </form>
+{% endblock %}

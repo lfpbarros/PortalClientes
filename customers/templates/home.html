@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Portal Clientes - Home</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #2c7b2f;
+            height: 100vh;
+            color: white;
+            padding: 20px;
+            position: fixed;
+        }
+
+        .sidebar h2 {
+            font-weight: bold;
+        }
+
+        .sidebar a {
+            color: white;
+            display: block;
+            margin-top: 20px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 40px;
+            background-color: #f6f6f6;
+            min-height: 100vh;
+        }
+
+        .content-box {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .content-box h1 {
+            color: #2c3e50;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>PORTAL CLIENTES</h2>
+        <a href="#">New Company</a>
+    </div>
+
+    <div class="main-content">
+        <div class="content-box">
+            <h1>Start New Company Onboarding</h1>
+            <p>Please provide the basic information to create a new company record and begin the KYC Questionnaire.</p>
+            
+            <form method="post">
+                {% csrf_token %}
+                <label for="company_name">Full Company Name</label>
+                <input type="text" id="company_name" name="company_name">
+
+                <label for="previous_names">Previous names</label>
+                <textarea id="previous_names" name="previous_names" rows="5"></textarea>
+
+                <label for="aliases">Any other aliases or trade names</label>
+                <input type="text" id="aliases" name="aliases">
+
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

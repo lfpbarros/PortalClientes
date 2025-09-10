@@ -1,0 +1,294 @@
+{% load static %}
+{% load i18n %}
+{% load custom_filters %} {# Mantenha este load se os filtros 'custom_filters' forem realmente usados #}
+<!DOCTYPE html>
+<html lang="pt-br"> {# Alterado para pt-br #}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% blocktrans %}{{ page_title|default:"Company Onboarding" }} - PRIO KYC{% endblocktrans %}</title>
+    
+    {# Bootstrap CSS primeiro, depois ícones e o CSS do projeto para poder sobrescrever estilos #}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    {# CSS principal do onboarding #}
+    <link rel="stylesheet" href="{% static 'css/onboarding.css' %}">
+    
+    {# Você pode adicionar links para fontes externas aqui, se estiver usando (ex: Google Fonts) #}
+    {# <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"> #}
+</head>
+<body>
+    <div class="sidebar">
+        <h2 class="sidebar-logo-text">{% trans "PORTAL CLIENTES" %}</h2> {# Título principal do menu lateral #}
+        <h3 class="sidebar-company-name">{{ company.full_company_name|default:"Nova Empresa" }}</h3> {# Nome da empresa em onboarding #}
+        
+        {# Barra de progresso horizontal na sidebar (para o percentual global) #}
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: {{ progress_percentage }}%;">{{ progress_percentage }}%</div>
+        </div>
+        
+        {# Menu de navegação lateral - representa a "barra de progresso" vertical das etapas #}
+        <ul class="onboarding-steps-list"> {# Classe para estilização específica da lista de etapas #}
+            {% for slug, title in all_steps.items %}
+                {# APENAS VISIBILIDADE: Esconde as abas se não for membro da equipe #}
+                {% if slug == 'compliance_analysis' or slug == 'status_control' %}
+                    {% if is_staff_member %} {# Esta variável DEVE vir da sua view (contexto) #}
+                        <li>
+                            {% if company.pk %}
+                                <a href="{% url 'customers:company_onboarding_step' pk=company.pk step_slug=slug %}"
+                                   class="{% if slug == current_step_key %}active{% endif %}">
+                                    <span class="step-number">{{ forloop.counter }}.</span> 
+                                    <span class="step-title-text">{{ title|title }}</span>
+                                    <span class="check-icon">{% if completed_steps_set and slug in completed_steps_set %}<i class="fas fa-check-circle"></i>{% endif %}</span>
+                                </a>
+                            {% else %}
+                                <span class="step-number">{{ forloop.counter }}.</span> 
+                                <span class="step-title-text">{{ title|title }}</span>
+                                <span class="check-icon">{% if completed_steps_set and slug in completed_steps_set %}<i class="fas fa-check-circle"></i>{% endif %}</span>
+                            {% endif %}
+                        </li>
+                    {% endif %}
+                {% else %}
+                    {# Exibe todas as outras abas para todos os usuários #}
+                    <li>
+                        {% if company.pk %}
+                            <a href="{% url 'customers:company_onboarding_step' pk=company.pk step_slug=slug %}"
+                               class="{% if slug == current_step_key %}active{% endif %}">
+                                <span class="step-number">{{ forloop.counter }}.</span> 
+                                <span class="step-title-text">{{ title|title }}</span>
+                                <span class="check-icon">{% if completed_steps_set and slug in completed_steps_set %}<i class="fas fa-check-circle"></i>{% endif %}</span>
+                            </a>
+                        {% else %}
+                            <span class="step-number">{{ forloop.counter }}.</span> 
+                            <span class="step-title-text">{{ title|title }}</span>
+                            <span class="check-icon">{% if completed_steps_set and slug in completed_steps_set %}<i class="fas fa-check-circle"></i>{% endif %}</span>
+                        {% endif %}
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+        
+        {# Link para voltar ao menu principal #}
+        {% if company.pk %}
+            <a href="{% url 'customers:company_detail' pk=company.pk %}" class="back-button sidebar-back-button">{% trans "Voltar ao Menu Principal" %}</a>
+        {% else %}
+            {# Botão desabilitado se a empresa ainda não foi criada #}
+            <span class="back-button sidebar-back-button disabled-link" title="Disponível após a criação da empresa">Voltar ao Menu Principal</span>
+        {% endif %}
+
+        <a href="{% url 'customers:dashboard' %}" class="back-button sidebar-back-button">{% trans "Dashboard" %}</a>
+    </div>
+
+    <div class="main-content">
+        <header class="header">
+            <h1 class="header-title">{% blocktrans %}Questionário KYC - {{ page_title }}{% endblocktrans %}</h1> {# page_title já vem processado da View #}
+            <img src="{% static 'images/logo.png' %}" alt="PRIO Logo" class="prio-logo">
+        </header>
+        
+        {# Área para o conteúdo específico de cada etapa do formulário #}
+        <div class="form-area">
+            {# Mensagens globais (sucesso/erro/aviso) #}
+            {% if messages %}
+                <div class="mb-3">
+                    {% for message in messages %}
+                        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <div class="form-section">
+                {% block onboarding_content %}
+                    {# Conteúdo específico de cada etapa será inserido aqui pelo template filho (onboarding_step.html) #}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+    
+    {# Bootstrap JS bundle (inclui Popper) #}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="{% static 'js/table-filters.js' %}"></script>
+    <script>
+      // Autoajuste de altura para <textarea> começando com 1 linha
+      (function() {
+        function autosize(el) {
+          el.style.overflow = 'hidden';
+          el.style.resize = 'vertical';
+          el.style.height = 'auto';
+          el.style.height = el.scrollHeight + 'px';
+        }
+        function init(el) {
+          if (!el.dataset.autosizeInitialized) {
+            el.setAttribute('rows', '1');
+            el.dataset.autosizeInitialized = '1';
+          }
+          autosize(el);
+        }
+        window.addEventListener('load', function() {
+          document.querySelectorAll('textarea').forEach(init);
+        });
+        document.addEventListener('input', function(e) {
+          if (e.target && e.target.tagName === 'TEXTAREA') autosize(e.target);
+        });
+      })();
+    </script>
+    <script>
+      // Company: mostrar campo de Bolsa apenas quando "Publicly listed?" for Sim
+      (function() {
+        function wrapperFor(input) {
+          if (!input) return null;
+          if (input.closest) {
+            const p = input.closest('p');
+            if (p) return p;
+          }
+          return input.parentElement;
+        }
+        function currentListedValue() {
+          // Checkbox com prefixo (id termina com -is_publicly_listed)
+          const checkbox = document.querySelector('input[type="checkbox"][id$="-is_publicly_listed"]');
+          if (checkbox) return !!checkbox.checked;
+          // Radio com prefixo no name (name termina com -is_publicly_listed)
+          const radios = document.querySelectorAll('input[type="radio"][name$="-is_publicly_listed"]');
+          if (radios && radios.length) {
+            for (const r of radios) { if (r.checked) return r.value === 'True'; }
+          }
+          return false;
+        }
+        function toggle() {
+          const stockInput = document.querySelector('[id$="-stock_exchange_info"]');
+          const stockWrap = wrapperFor(stockInput);
+          if (!stockWrap) return;
+          const show = currentListedValue();
+          stockWrap.style.display = show ? '' : 'none';
+          if (!show && stockInput) stockInput.value = '';
+        }
+        window.addEventListener('load', function() {
+          toggle();
+          const checkbox = document.querySelector('input[type="checkbox"][id$="-is_publicly_listed"]');
+          if (checkbox) checkbox.addEventListener('change', toggle);
+          const radios = document.querySelectorAll('input[type="radio"][name$="-is_publicly_listed"]');
+          if (radios && radios.length) radios.forEach(r => r.addEventListener('change', toggle));
+        });
+      })();
+    </script>
+    <script>
+      // BusinessInformation: mostrar detalhes de agentes apenas quando resposta for Sim
+      (function() {
+        function wrapperFor(input) {
+          if (!input) return null;
+          if (input.closest) {
+            const p = input.closest('p');
+            if (p) return p;
+          }
+          return input.parentElement;
+        }
+        function currentValue() {
+          // Checkbox (fallback)
+          const checkbox = document.querySelector('input[type="checkbox"][id$="-has_agents_intermediaries"]');
+          if (checkbox) return !!checkbox.checked;
+          // Radios
+          const radios = document.querySelectorAll('input[type="radio"][name$="-has_agents_intermediaries"]');
+          if (radios && radios.length) {
+            for (const r of radios) { if (r.checked) return r.value === 'True'; }
+          }
+          return false;
+        }
+        function toggle() {
+          const detailsInput = document.querySelector('[id$="-agents_intermediaries_details"]');
+          const detailsWrap = wrapperFor(detailsInput);
+          if (!detailsWrap) return;
+          const show = currentValue();
+          detailsWrap.style.display = show ? '' : 'none';
+          if (!show && detailsInput) detailsInput.value = '';
+        }
+        window.addEventListener('load', function() {
+          toggle();
+          const checkbox = document.querySelector('input[type="checkbox"][id$="-has_agents_intermediaries"]');
+          if (checkbox) checkbox.addEventListener('change', toggle);
+          const radios = document.querySelectorAll('input[type="radio"][name$="-has_agents_intermediaries"]');
+          if (radios && radios.length) radios.forEach(r => r.addEventListener('change', toggle));
+        });
+      })();
+    </script>
+    <script>
+      // BusinessInformation: mostrar tabela de relacionamentos prévios apenas quando "has_prior_business_relationships" for Sim
+      (function() {
+        function currentValue() {
+          const checkbox = document.querySelector('input[type="checkbox"][id$="-has_prior_business_relationships"]');
+          if (checkbox) return !!checkbox.checked;
+          const radios = document.querySelectorAll('input[type="radio"][name$="-has_prior_business_relationships"]');
+          if (radios && radios.length) {
+            for (const r of radios) { if (r.checked) return r.value === 'True'; }
+          }
+          return false;
+        }
+        function toggle() {
+          const block = document.getElementById('prior-relationships-block');
+          if (!block) return;
+          const show = currentValue();
+          block.style.display = show ? '' : 'none';
+        }
+        window.addEventListener('load', function() {
+          toggle();
+          const checkbox = document.querySelector('input[type="checkbox"][id$="-has_prior_business_relationships"]');
+          if (checkbox) checkbox.addEventListener('change', toggle);
+          const radios = document.querySelectorAll('input[type="radio"][name$="-has_prior_business_relationships"]');
+          if (radios && radios.length) radios.forEach(r => r.addEventListener('change', toggle));
+        });
+      })();
+    </script>
+    <script>
+      // Ownership: toggle GovernmentOfficialInteraction details
+      (function() {
+        function showHide(idSuffix, detailsSuffix) {
+          const radios = document.querySelectorAll('input[type="radio"][name$="' + idSuffix + '"]');
+          const checkbox = document.querySelector('input[type="checkbox"][id$="' + idSuffix + '"]');
+          const details = document.querySelector('[id$="' + detailsSuffix + '"]');
+          const wrap = details ? (details.closest('p') || details.parentElement) : null;
+          function current() {
+            if (radios && radios.length) { for (const r of radios) { if (r.checked) return r.value === 'True'; } }
+            if (checkbox) return !!checkbox.checked;
+            return false;
+          }
+          function toggle() {
+            if (!wrap) return;
+            const show = current();
+            wrap.style.display = show ? '' : 'none';
+            if (!show && details) details.value = '';
+          }
+          toggle();
+          if (checkbox) checkbox.addEventListener('change', toggle);
+          if (radios && radios.length) radios.forEach(r => r.addEventListener('change', toggle));
+        }
+        window.addEventListener('load', function() {
+          showHide('-needs_to_interact', '-details');
+          showHide('-has_commercial_advantage', '-commercial_advantage_details');
+        });
+      })();
+    </script>
+    <script>
+      // Formsets: botão "Remover" aciona DELETE e oculta o bloco
+      (function() {
+        function attachInlineRemoveHandlers(root) {
+          (root || document).querySelectorAll('.inline-form-item').forEach(function(item) {
+            const btn = item.querySelector('.inline-remove-btn');
+            if (!btn || btn.dataset.bound) return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', function() {
+              const del = item.querySelector('input[type="checkbox"][name$="-DELETE"]');
+              if (del) {
+                del.checked = true;
+                item.style.opacity = '0.5';
+                item.style.pointerEvents = 'none';
+              }
+            });
+          });
+        }
+        window.addEventListener('load', function() { attachInlineRemoveHandlers(document); });
+        document.addEventListener('input', function(e){ if (e.target && e.target.matches('input,select,textarea')) attachInlineRemoveHandlers(document); });
+      })();
+    </script>
+</body>
+</html>

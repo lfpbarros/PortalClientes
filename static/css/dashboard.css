@@ -1,0 +1,55 @@
+/* Dashboard-specific enhancements, aligned with onboarding.css */
+
+.kpi-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.kpi-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px var(--shadow-light);
+}
+.kpi-pill .kpi-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.kpi-pill .kpi-value {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.kpi-card .h3 {
+  color: #2c3e50;
+}
+
+.clean-list .list-group-item {
+  border: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+.clean-list .list-group-item + .list-group-item {
+  border-top: 1px dashed var(--border-color-light);
+}
+
+/* Subtle table header style */
+.table thead th {
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .kpi-strip {
+    gap: 8px;
+  }
+  .kpi-pill {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+

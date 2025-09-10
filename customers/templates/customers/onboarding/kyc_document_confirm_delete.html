@@ -1,0 +1,18 @@
+{% extends 'customers/onboarding/onboarding_base.html' %}
+{% load i18n %}
+
+{% block onboarding_content %}
+  <h2>{{ page_title }}</h2>
+  <p>{% trans "Are you sure you want to delete this document?" %}</p>
+  <ul>
+    <li><strong>{% trans "Document Type" %}:</strong> {{ object.get_document_type_display }}</li>
+    <li><strong>{% trans "File" %}:</strong> {% if object.file %}<a href="{{ object.file.url }}" target="_blank">{{ object.file.name }}</a>{% else %}-{% endif %}</li>
+    <li><strong>{% trans "Description" %}:</strong> {{ object.description|default:'-' }}</li>
+  </ul>
+  <form method="post">
+    {% csrf_token %}
+    <a class="btn btn-outline-secondary" href="{% url 'customers:company_onboarding_step' pk=company.pk step_slug='add_documents' %}">{% trans "Cancelar" %}</a>
+    <button type="submit" class="btn btn-danger">{% trans "Delete" %}</button>
+  </form>
+{% endblock %}
+

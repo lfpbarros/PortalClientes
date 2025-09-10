@@ -1,0 +1,15 @@
+{% extends 'customers/onboarding/onboarding_base.html' %}
+{% load i18n %}
+
+{% block onboarding_content %}
+  <h2>{% trans "Remover item" %}</h2>
+  <p>{% trans "Tem certeza que deseja excluir este item?" %}</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-actions d-flex justify-content-between align-items-center gap-2">
+      <a class="btn btn-outline-secondary" href="{% url 'customers:company_onboarding_step' pk=company.pk step_slug='ownership_management' %}">{% trans "Cancelar" %}</a>
+      <button type="submit" class="btn btn-danger">{% trans "Remover" %}</button>
+    </div>
+  </form>
+{% endblock %}
+
