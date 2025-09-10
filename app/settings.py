@@ -15,7 +15,7 @@ SECRET_KEY = 'django-insecure-w0_=wm^=^oclt4d^=do6pa=o3t8s)-@3j2t+*vlu!)gx5u+(&a
 DEBUG = True
 
 # Hosts permitidos (pode sobrescrever via env: ALLOWED_HOSTS="host1,host2")
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
