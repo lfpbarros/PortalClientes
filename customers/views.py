@@ -197,8 +197,11 @@ class CompanyOnboardingStepView(LoginRequiredMixin, View): # Mantenha assim se a
         context['form'] = form
         if step_slug == 'ownership_management':
             try:
-                om, _ = OwnershipManagementInfo.objects.get_or_create(company=company, defaults={'created_by': request.user if request.user.is_authenticated else None})
-                goi, _ = GovernmentOfficialInteraction.objects.get_or_create(ownership_management=om)
+                om, created_om = OwnershipManagementInfo.objects.get_or_create(
+                    company=company,
+                    defaults={'created_by': request.user if request.user.is_authenticated else None}
+                )
+                goi, created_goi = GovernmentOfficialInteraction.objects.get_or_create(ownership_management=om)
                 context['goi_form'] = GovernmentOfficialInteractionForm(instance=goi, prefix='goi')
             except Exception:
                 context['goi_form'] = GovernmentOfficialInteractionForm(prefix='goi')
@@ -252,11 +255,30 @@ class CompanyOnboardingStepView(LoginRequiredMixin, View): # Mantenha assim se a
 
                 form.save() # Salva a instância (que agora tem created_by/performed_by/last_updated_by se aplicável)
 
+            # If Banking Information step, handle extra bank certificate file upload
+            if step_slug == 'banking_information':
+                try:
+                    bank_cert_file = request.FILES.get('bank_certificate_file')
+                    if bank_cert_file:
+                        KYCDocument.objects.create(
+                            company=company,
+                            document_type='BANK_CERTIFICATE',
+                            file=bank_cert_file,
+                            uploaded_by=request.user if request.user.is_authenticated else None,
+                            description='Bank account certificate'
+                        )
+                except Exception:
+                    # Silently ignore attachment errors to not block main form save
+                    pass
+
             # Ownership & Management: process GovernmentOfficialInteraction inline
             if step_slug == 'ownership_management':
                 try:
-                    om, _ = OwnershipManagementInfo.objects.get_or_create(company=company, defaults={'created_by': request.user if request.user.is_authenticated else None})
-                    goi, _ = GovernmentOfficialInteraction.objects.get_or_create(ownership_management=om)
+                    om, created_om = OwnershipManagementInfo.objects.get_or_create(
+                        company=company,
+                        defaults={'created_by': request.user if request.user.is_authenticated else None}
+                    )
+                    goi, created_goi = GovernmentOfficialInteraction.objects.get_or_create(ownership_management=om)
                     goi_form = GovernmentOfficialInteractionForm(request.POST, request.FILES, instance=goi, prefix='goi')
                     if goi_form.is_valid():
                         goi_form.save()
@@ -293,8 +315,11 @@ class CompanyOnboardingStepView(LoginRequiredMixin, View): # Mantenha assim se a
         context['form'] = form
         if step_slug == 'ownership_management':
             try:
-                om, _ = OwnershipManagementInfo.objects.get_or_create(company=company, defaults={'created_by': request.user if request.user.is_authenticated else None})
-                goi, _ = GovernmentOfficialInteraction.objects.get_or_create(ownership_management=om)
+                om, created_om = OwnershipManagementInfo.objects.get_or_create(
+                    company=company,
+                    defaults={'created_by': request.user if request.user.is_authenticated else None}
+                )
+                goi, created_goi = GovernmentOfficialInteraction.objects.get_or_create(ownership_management=om)
                 context['goi_form'] = GovernmentOfficialInteractionForm(instance=goi, prefix='goi')
             except Exception:
                 from .forms import GovernmentOfficialInteractionForm as _GOIForm

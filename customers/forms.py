@@ -60,6 +60,26 @@ class CompanyForm(forms.ModelForm):
                 if fname in self.fields:
                     self.fields[fname].widget = forms.HiddenInput()
                     self.fields[fname].required = False
+
+        # Hide CNPJ unless client is National (server-side, reliable)
+        try:
+            # Determine current client_type considering form prefix
+            client_type_key = self.add_prefix('client_type') if getattr(self, 'prefix', None) else 'client_type'
+            if self.is_bound:
+                current_client_type = self.data.get(client_type_key)
+            else:
+                current_client_type = self.initial.get('client_type') if 'client_type' in self.initial else getattr(self.instance, 'client_type', None)
+
+            # Only hide CNPJ when explicitly INTERNATIONAL.
+            # Default/blank or NATIONAL: keep visible so the user can fill it.
+            if 'cnpj' in self.fields:
+                ctype = (str(current_client_type).upper() if current_client_type is not None else '')
+                if ctype == 'INTERNATIONAL':
+                    self.fields['cnpj'].widget = forms.HiddenInput()
+                    self.fields['cnpj'].required = False
+        except Exception:
+            # Fail-safe: do not break rendering if any issue occurs
+            pass
     class Meta:
         model = Company
         # Exclua 'created_by', 'created_at', 'updated_at' pois serão preenchidos na view/admin
@@ -403,6 +423,55 @@ class ComplianceInformationForm(forms.ModelForm):
 
 # --- Formulário para a seção de "Investigations & Sanctions" ---
 class InvestigationsSanctionsInfoForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Render boolean fields as explicit Yes/No radios
+        bool_fields = [
+            'suspended_from_business',
+            'subject_of_investigations',
+            'company_operations_governmental_authority',
+            'sanctioned_entity_individual',
+            'has_sanctioned_entity_dealings_1',
+            'has_sanctioned_entity_dealings_2',
+            'has_sanctioned_entity_dealings_3',
+            'has_sanctioned_entity_dealings_4',
+            'has_sanctioned_entity_dealings_5',
+        ]
+        for fname in bool_fields:
+            if fname in self.fields:
+                try:
+                    current = bool(getattr(self.instance, fname)) if getattr(self, 'instance', None) else False
+                except Exception:
+                    current = False
+                label = self.fields[fname].label
+                self.fields[fname] = forms.TypedChoiceField(
+                    label=label,
+                    choices=((True, 'Sim'), (False, 'Não')),
+                    widget=forms.RadioSelect,
+                    coerce=lambda x: True if x in (True, 'True', 'true', '1', 1, 'on', 'Sim', 'sim') else False,
+                    initial=current,
+                    required=True,
+                )
+
+    def clean(self):
+        cleaned = super().clean()
+        # Require details when a corresponding boolean is Yes
+        pairs = [
+            ('suspended_from_business', 'suspended_from_business_details'),
+            ('subject_of_investigations', 'subject_of_investigations_details'),
+            ('company_operations_governmental_authority', 'company_operations_governmental_authority_details'),
+            ('sanctioned_entity_individual', 'sanctioned_entity_individual_details'),
+            ('has_sanctioned_entity_dealings_1', 'sanctioned_entity_dealings_1_details'),
+            ('has_sanctioned_entity_dealings_2', 'sanctioned_entity_dealings_2_details'),
+            ('has_sanctioned_entity_dealings_3', 'sanctioned_entity_dealings_3_details'),
+            ('has_sanctioned_entity_dealings_4', 'sanctioned_entity_dealings_4_details'),
+            ('has_sanctioned_entity_dealings_5', 'sanctioned_entity_dealings_5_details'),
+        ]
+        for flag, details in pairs:
+            if cleaned.get(flag) and not cleaned.get(details):
+                self.add_error(details, 'Por favor, descreva os detalhes quando a resposta for Sim.')
+        return cleaned
+
     class Meta:
         model = InvestigationsSanctionsInfo
         exclude = ['company', 'created_by', 'created_at', 'updated_at']
@@ -419,14 +488,14 @@ class InvestigationsSanctionsInfoForm(forms.ModelForm):
             'sanctioned_entity_dealings_1_details': "If the answer is yes, please specify the details in the table below",
             'has_sanctioned_entity_dealings_2': "Does the Company or any of its subsidiaries engaged in the direct or indirect financing or facilitating of a loan to, investment in or other transaction involving a Sanctioned Country and/or a Sanctioned Person in the past?",
             'sanctioned_entity_dealings_2_details': "If yes, please describe such activities",
-            'has_sanctioned_entity_dealings_3': "Does the Company or any of its directors, officers, agents, employees or affiliates have any business, operations or other direct or indirect dealings involving commodities or services of a Sanctioned Country origin or shipped to, through, or from a Sanctioned Country, or an Sanctioned Country owned or registered vessels or aircraft, or finance or sale or export of the Company’s or any of its subsidiaries products for or with the involvement of any Sanctioned Country company or individual?",
+            'has_sanctioned_entity_dealings_3': "Does the Company or any of its directors, officers, agents, employees or affiliates have any business, operations or other direct or indirect dealings involving commodities or services of a Sanctioned Country origin or shipped to, through, or from a Sanctioned Country, or an Sanctioned Country owned or registered vessels or aircraft, or finance or sale or export of the Company's or any of its subsidiaries products for or with the involvement of any Sanctioned Country company or individual?",
             'sanctioned_entity_dealings_3_details': "If the answer is yes, please specify the details in the table below",
             'has_sanctioned_entity_dealings_4': "Does the company have any place policies and procedures to ensure compliance with Sanctions? / to prevent Sanctions violations (including but not limited to, third party screening, sanctions clauses in contracts, employee and third-party training, due diligence processes for transactions, and employee reporting or whistleblowing function, pre-embargoes and export control regulations?",
             'sanctioned_entity_dealings_4_details': "If the answer is yes, please specify the details in the table below",
             'has_sanctioned_entity_dealings_5': "Has the Company or any of its shareholders, members of the board, employees, etc. been subject to an investigation regarding Sanctions?",
             'sanctioned_entity_dealings_5_details': "If the answer is yes, please specify the details in the table below",
             'main_source_revenue_located': "Where is the company's main source of revenue located?",
-            'main_source_revenue_details': "Please specify the details in the table below",
+            'main_source_revenue_details': "Details",
         }
 
 

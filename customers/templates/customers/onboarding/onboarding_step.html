@@ -272,6 +272,17 @@
         {% endif %}
 
         {# Itera sobre os campos do formulário para renderização personalizada #}
+        {% if current_step_key == 'certification' %}
+        <div class="alert alert-secondary mb-3">
+            <p class="m-0"><strong>By completing this questionnaire I confirm that:</strong></p>
+            <ol class="mt-2 mb-0">
+                <li>I am authorized to sign this questionnaire on behalf of the Company.</li>
+                <li>The included information is complete and accurate.</li>
+                <li>Repsol will be immediately informed in writing if there are any material changes to the information provided.</li>
+                <li>Repsol is authorized to verify all the information provided and use it for due diligence purposes as well as request any further information or clarification that Repsol deems necessary.</li>
+            </ol>
+        </div>
+        {% endif %}
         {% if current_step_key == 'compliance' %}
         <div class="compliance-section">
         {% endif %}
@@ -292,7 +303,34 @@
                     </label>
                 </div>
             {% endif %}
-            <p {% if current_step_key == 'compliance' and field.name == 'due_diligence_process_description' %}id="ddp-desc-wrapper"{% endif %}>
+            {% if current_step_key == 'investigations_sanctions' and field.name == 'suspended_from_business' %}
+                <div class="section-card isec" id="prior-investigations">
+                    <div class="section-title">PRIOR INVESTIGATIONS</div>
+                    <div class="subsection-title">A. SUSPENSION FROM DOING BUSINESS</div>
+            {% endif %}
+            {% if current_step_key == 'investigations_sanctions' and field.name == 'subject_of_investigations' %}
+                <div class="subsection-title mt-3">B. PRIOR INVESTIGATIONS, ALLEGATIONS, OR CONVICTIONS</div>
+            {% endif %}
+            {% if current_step_key == 'investigations_sanctions' and field.name == 'company_operations_governmental_authority' %}
+                <div class="subsection-title mt-3">C. CURRENT INVESTIGATIONS BY COMPETENT AUTHORITY</div>
+            {% endif %}
+            {% if current_step_key == 'investigations_sanctions' and field.name == 'sanctioned_entity_individual' %}
+                </div> {# closes PRIOR INVESTIGATIONS section-card #}
+                <div class="section-card isec" id="sanctions-information">
+                    <div class="section-title">SANCTIONS INFORMATION</div>
+                    <div class="subsection-title">1. SANCTIONED ENTITY</div>
+            {% endif %}
+            {% if current_step_key == 'investigations_sanctions' and field.name == 'has_sanctioned_entity_dealings_1' %}
+                <div class="subsection-title mt-3">2. INVESTMENT, BUSINESS OR FINANCIAL DEALINGS WITH SANCTIONED ENTITIES</div>
+            {% endif %}
+            <p
+                {% if current_step_key == 'compliance' and field.name == 'due_diligence_process_description' %}
+                    id="ddp-desc-wrapper"
+                {% endif %}
+                {% if field.name == 'cnpj' %}
+                    id="cnpj-field-wrapper"
+                {% endif %}
+            >
                 {% if field.field.widget.input_type == 'checkbox' %}
                     {# Lidar com checkboxes (e.g. is_publicly_listed) #}
                     <label for="{{ field.id_for_label }}">
@@ -321,8 +359,7 @@
                     <ul class="errorlist">
                         {% for error in field.errors %}
                             <li>{{ error }}</li>
-{% endfor %}
-{% endif %}
+                        {% endfor %}
                     </ul>
                 {% endif %}
             </p>
@@ -380,9 +417,54 @@
                 </div>
             {% endif %}
         {% endfor %}
+
+        {# Extra attachment field for Banking Information step #}
+        {% if current_step_key == 'banking_information' %}
+        <div class="mb-3">
+            <label for="bank_certificate_file" class="form-label">{% trans "Bank Account Certificate" %}</label>
+            <input type="file" name="bank_certificate_file" id="bank_certificate_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+            <small class="form-text text-muted">Please provide us with bank account certificate issued by your bank, including at least the information listed above.</small>
+        </div>
+        {% endif %}
+        {% if current_step_key == 'investigations_sanctions' %}
+            </div>
+        {% endif %}
+        {% endif %} {# fecha if current_step_key != 'add_documents' #}
         {% if current_step_key == 'compliance' %}
         </div>
         {% endif %}
+
+        <script>
+            // Global fallback independent of step checks, uses simple IDs
+            (function(){
+                try {
+                    var sel = document.getElementById('id_client_type');
+                    var cnpj = document.getElementById('id_cnpj');
+                    function wrapOf(el){
+                        if (!el) return null;
+                        if (typeof el.closest === 'function') return el.closest('p') || el.parentElement;
+                        var n = el; while (n && n.tagName !== 'P') n = n.parentElement; return n || el.parentElement;
+                    }
+                    function toggle(){
+                        var w = wrapOf(cnpj);
+                        if (!w) return;
+                        var v = ((sel && sel.value) || '').toString().trim().toUpperCase();
+                        var show = (v === 'NATIONAL');
+                        w.style.display = show ? '' : 'none';
+                        if (!show && cnpj) try { cnpj.value = ''; } catch(e){}
+                    }
+                    if (sel) {
+                        sel.addEventListener('change', toggle);
+                        sel.addEventListener('input', toggle);
+                        sel.addEventListener('blur', toggle);
+                    }
+                    toggle();
+                    setTimeout(toggle, 50);
+                    setTimeout(toggle, 150);
+                    setTimeout(toggle, 300);
+                } catch (e) { /* swallow */ }
+            })();
+        </script>
         {% if current_step_key == 'add_documents' %}
             <div class="d-flex justify-content-between align-items-center mb-2 contacts-header">
                 <h3 class="m-0 d-flex align-items-center gap-2">
@@ -393,16 +475,7 @@
                     <i class="fas fa-plus me-1"></i> {% trans "Add Document" %}
                 </a>
             </div>
-            <div id="document-editor" class="card shadow-sm mb-3" style="display:none;">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <strong id="document-editor-title">{% trans "New Document" %}</strong>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="doc-cancel-btn">{% trans "Cancelar" %}</button>
-                        <button type="submit" class="btn btn-sm btn-primary">{% trans "Save" %}</button>
-                    </div>
-                </div>
-                <div class="card-body" id="document-editor-body"></div>
-            </div>
+            {# editor removido: add/edit ocorre em endpoints separados #}
             <div class="table-responsive contacts-table-wrapper mb-3">
                 <table class="table table-sm table-striped align-middle contacts-table">
                     <thead>
@@ -446,10 +519,14 @@
                 </table>
             </div>
             <div id="add-doc-form-anchor"></div>
+            <style>
+              /* Hide any inline formset blocks on this tab */
+              .inline-form-item { display: none !important; }
+            </style>
         {% endif %}
 
         {# Renderizando FormSets (para múltiplos itens, como Ownership & Management inlines ou KYCDocuments) #}
-        {% if form.management_form %} {# Verifica se é um formset #}
+        {% if current_step_key != 'add_documents' and form.management_form %} {# Verifica se é um formset #}
             {{ form.management_form }}
             {% for sub_form in form %}
                 <div id="if-{{ sub_form.prefix }}" data-prefix="{{ sub_form.prefix }}" class="inline-form-item {% if current_step_key == 'add_documents' %}{% if sub_form.instance.pk %}existing-doc{% else %}new-doc{% endif %}{% endif %}"
@@ -504,6 +581,148 @@
                 <button type="submit" class="btn btn-primary">{% trans "Save & Continue" %}</button>
             </div>
         </div>
+        {% if current_step_key == 'general_information' %}
+        <script>
+            (function(){
+                // Prefer explicit ids with Django prefix when available
+                var explicitClientTypeId = 'id_{{ form.prefix }}-client_type';
+                var explicitCnpjId = 'id_{{ form.prefix }}-cnpj';
+                function getClientTypeInputs(){
+                    var q = [];
+                    // Try explicit select by id first
+                    var explicit = document.getElementById(explicitClientTypeId);
+                    if (explicit) q.push(explicit);
+                    q = q.concat(Array.from(document.querySelectorAll("select[name$='client_type']")));
+                    q = q.concat(Array.from(document.querySelectorAll("input[type='radio'][name$='client_type']")));
+                    // Also match by id (with or without prefix)
+                    var byId = document.querySelectorAll("#id_client_type, [id$='-client_type']");
+                    q = q.concat(Array.from(byId));
+                    // Deduplicate
+                    var seen = new Set();
+                    var out = [];
+                    q.forEach(function(el){ if (!seen.has(el)) { seen.add(el); out.push(el); } });
+                    return out;
+                }
+                function getClientTypeValue(){
+                    var els = getClientTypeInputs();
+                    if (!els.length) return '';
+                    // Prefer a select if present
+                    var sel = els.find(function(e){ return e.tagName === 'SELECT'; });
+                    if (sel) {
+                        var v = (sel.value || '').toString().trim();
+                        if (!v && sel.options && sel.selectedIndex >= 0) v = (sel.options[sel.selectedIndex].value || sel.options[sel.selectedIndex].text || '').toString().trim();
+                        return v.toUpperCase();
+                    }
+                    // Radios
+                    for (var i=0;i<els.length;i++){
+                        var e = els[i];
+                        if (e.type === 'radio' && e.checked) return (e.value || '').toString().trim().toUpperCase();
+                    }
+                    return '';
+                }
+                function isNational(val){
+                    var v = (val||'').toString().trim().toUpperCase();
+                    return v === 'NATIONAL' || v === 'NACIONAL';
+                }
+                function getCnpjWrapper(){
+                    // Prefer explicit CNPJ input's parent wrapper
+                    var wrap = document.getElementById('cnpj-field-wrapper');
+                    if (wrap) return wrap;
+                    var inp = document.getElementById(explicitCnpjId) || document.querySelector("input[name$='cnpj']");
+                    if (!inp) return null;
+                    // Try common containers
+                    if (typeof inp.closest === 'function') {
+                        var p = inp.closest('p');
+                        if (p) return p;
+                        var grp = inp.closest('.form-group');
+                        if (grp) return grp;
+                        var mb = inp.closest('.mb-2') || inp.closest('.mb-3');
+                        if (mb) return mb;
+                        var row = inp.closest('.row');
+                        if (row) return row;
+                    }
+                    // Try label for the input
+                    if (inp.id) {
+                        var lbl = document.querySelector("label[for='" + inp.id.replace(/([\\.*+?^${}()|[\]\\/\\])/g, '\\$1') + "']");
+                        if (lbl && lbl.parentElement) return lbl.parentElement;
+                    }
+                    return inp.parentElement;
+                }
+                function toggleCnpj(){
+                    var wrap = getCnpjWrapper();
+                    if (!wrap) return;
+                    var val = getClientTypeValue();
+                    var show = isNational(val);
+                    wrap.style.display = show ? '' : 'none';
+                    if (!show) {
+                        var cnpjInputs = [document.getElementById(explicitCnpjId)].concat(Array.from(document.querySelectorAll("input[name$='cnpj']"))).filter(Boolean);
+                        cnpjInputs.forEach(function(inp){ try { inp.value = ''; } catch(_e){} });
+                    }
+                }
+                function bind(){
+                    var els = getClientTypeInputs();
+                    els.forEach(function(el){
+                        el.addEventListener('change', toggleCnpj);
+                        el.addEventListener('input', toggleCnpj);
+                        el.addEventListener('blur', toggleCnpj);
+                    });
+                    // Observe mutations on the select in case a UI lib rewires it
+                    var sel = els.find(function(e){ return e.tagName === 'SELECT'; });
+                    if (sel && typeof MutationObserver !== 'undefined'){
+                        var obs = new MutationObserver(function(){ toggleCnpj(); });
+                        obs.observe(sel, { attributes: true, attributeFilter: ['value', 'class'], childList: false, subtree: false });
+                    }
+                    var formEl = document.querySelector('form');
+                    if (formEl) {
+                        formEl.addEventListener('change', function(e){
+                            var t = e.target;
+                            if (!t) return;
+                            var nm = (t.name||'');
+                            if (nm.endsWith('client_type')) toggleCnpj();
+                        });
+                    }
+                    // Initial run and a couple of delayed retries (in case of UI widgets)
+                    toggleCnpj();
+                    setTimeout(toggleCnpj, 50);
+                    setTimeout(toggleCnpj, 150);
+                    setTimeout(toggleCnpj, 300);
+                    setTimeout(toggleCnpj, 600);
+                }
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', bind);
+                } else {
+                    bind();
+                }
+            })();
+        </script>
+        <script>
+            // Fallback direto para ids simples (id_client_type / id_cnpj)
+            (function(){
+                var sel = document.getElementById('id_client_type');
+                var cnpj = document.getElementById('id_cnpj');
+                function getWrap(el){
+                    if (!el) return null;
+                    if (typeof el.closest === 'function') return el.closest('p') || el.parentElement;
+                    var p = el; while (p && p.tagName !== 'P') p = p.parentElement; return p || el.parentElement;
+                }
+                function toggle(){
+                    var wrap = getWrap(cnpj);
+                    if (!wrap) return;
+                    var v = ((sel && sel.value) || '').toString().trim().toUpperCase();
+                    var show = (v === 'NATIONAL');
+                    wrap.style.display = show ? '' : 'none';
+                    if (!show && cnpj) try { cnpj.value = ''; } catch(e){}
+                }
+                if (sel){ sel.addEventListener('change', toggle); sel.addEventListener('input', toggle); sel.addEventListener('blur', toggle); }
+                // inicializa
+                toggle();
+                // revalida em pequenos intervalos
+                setTimeout(toggle, 50);
+                setTimeout(toggle, 150);
+                setTimeout(toggle, 300);
+            })();
+        </script>
+        {% endif %}
         {% if current_step_key == 'compliance' %}
         <style>
             #ddp-desc-wrapper{display:none;}
@@ -561,88 +780,82 @@
         </script>
         {% endif %}
 
-        {% if current_step_key == 'add_documents' %}
+        {% if current_step_key == 'investigations_sanctions' %}
         <style>
-            /* Esconde os formulários de edição existentes e o de novo documento por padrão */
-            .inline-form-item.existing-doc { display:none; }
-            .inline-form-item.new-doc { display:none; }
+            /* Visual tweaks for Investigations & Sanctions */
+            .section-card.isec { background:#fcfcff; border:1px solid #eaeafa; border-radius:10px; padding:14px 16px; margin:14px 0; }
+            .section-card.isec .section-title { font-size:0.95rem; font-weight:600; color:#495057; text-transform:uppercase; letter-spacing:.03em; margin-bottom:6px; }
+            .section-card.isec .subsection-title { font-size:0.85rem; font-weight:600; color:#6c757d; text-transform:uppercase; letter-spacing:.02em; margin:10px 0 6px; }
+            .section-card.isec p { margin-bottom:10px; }
+            .section-card.isec .radio-group { display:flex; gap:16px; flex-wrap:wrap; }
         </style>
         <script>
             (function(){
-                var btn = document.getElementById('add-doc-btn');
-                function showNewDocForm(){
-                    var el = document.querySelector('.inline-form-item.new-doc');
-                    if (el){ el.style.display = 'block'; el.scrollIntoView({behavior:'smooth', block:'start'}); }
+                function truthy(val){
+                    var v = (val==null? '': String(val)).trim().toLowerCase();
+                    return v === 'true' || v === '1' || v === 'yes' || v === 'sim' || v === 'on';
                 }
-                if (btn) btn.addEventListener('click', showNewDocForm);
-                // Se já houver erros no novo subform, exibir automaticamente
-                var hasErrors = document.querySelector('.inline-form-item.new-doc .errorlist li');
-                if (hasErrors) showNewDocForm();
-
-                // Marcar DELETE ao clicar em Excluir na tabela
-                function bindDeleteButtons(){
-                    var buttons = document.querySelectorAll('.doc-delete-btn');
-                    buttons.forEach(function(b){
-                        b.addEventListener('click', function(){
-                            var prefix = b.getAttribute('data-prefix');
-                            if (!prefix) return;
-                            var del = document.getElementById('id_' + prefix + '-DELETE');
-                            var row = b.closest('tr');
-                            if (del) {
-                                del.checked = true;
-                                if (row) { row.style.opacity = '0.5'; row.classList.add('table-danger'); }
-                            }
+                // Pairs: [flag field name, details field name]
+                var pairs = [
+                    ['suspended_from_business','suspended_from_business_details'],
+                    ['subject_of_investigations','subject_of_investigations_details'],
+                    ['company_operations_governmental_authority','company_operations_governmental_authority_details'],
+                    ['sanctioned_entity_individual','sanctioned_entity_individual_details'],
+                    ['has_sanctioned_entity_dealings_1','sanctioned_entity_dealings_1_details'],
+                    ['has_sanctioned_entity_dealings_2','sanctioned_entity_dealings_2_details'],
+                    ['has_sanctioned_entity_dealings_3','sanctioned_entity_dealings_3_details'],
+                    ['has_sanctioned_entity_dealings_4','sanctioned_entity_dealings_4_details'],
+                    ['has_sanctioned_entity_dealings_5','sanctioned_entity_dealings_5_details']
+                ];
+                function getCheckedValue(name){
+                    var radios = document.querySelectorAll("input[type='radio'][name$='"+name+"']");
+                    for (var i=0;i<radios.length;i++){
+                        if (radios[i].checked) return radios[i].value;
+                    }
+                    return null;
+                }
+                function getDetailsWrapper(name){
+                    var field = document.querySelector("[name$='"+name+"']");
+                    if (!field) return null;
+                    var p = field.closest('p');
+                    return p || field.parentElement;
+                }
+                function updateVisibility(){
+                    pairs.forEach(function(pair){
+                        var flag = pair[0], details = pair[1];
+                        var val = getCheckedValue(flag);
+                        var wrap = getDetailsWrapper(details);
+                        if (!wrap) return;
+                        var show = truthy(val);
+                        wrap.style.display = show ? '' : 'none';
+                    });
+                }
+                function bind(){
+                    pairs.forEach(function(pair){
+                        var flag = pair[0];
+                        var radios = document.querySelectorAll("input[type='radio'][name$='"+flag+"']");
+                        radios.forEach(function(r){
+                            r.addEventListener('change', updateVisibility);
+                            r.addEventListener('input', updateVisibility);
                         });
                     });
                 }
-                bindDeleteButtons();
+                // init
+                bind();
+                updateVisibility();
             })();
         </script>
         {% endif %}
+
+        {% if current_step_key == 'add_documents' %}
+        <style>
+            /* Oculta possíveis blocos de formset nesta aba, deixando apenas a tabela */
+            .inline-form-item { display:none; }
+        </style>
+        {% endif %}
     </form>
     {% endif %}
-{% if current_step_key == 'add_documents' %}
-<style>
-  /* Editor area for Add/Edit document */
-  #document-editor .card-body p { margin-bottom: 10px; }
-  .inline-form-item.existing-doc { display:none; }
-  .inline-form-item.new-doc { display:none; }
-  .actions-col { width: 140px; }
-</style>
-<script>
-(function(){
-  var editor = document.getElementById('document-editor');
-  var editorBody = document.getElementById('document-editor-body');
-  var editorTitle = document.getElementById('document-editor-title');
-  var btnAdd = document.getElementById('add-doc-btn');
-  var btnCancel = document.getElementById('doc-cancel-btn');
-
-  function showInEditor(node, title){
-    if (!node || !editor || !editorBody) return;
-    node.style.display = 'block';
-    editorBody.innerHTML = '';
-    editorBody.appendChild(node);
-    if (editorTitle) editorTitle.textContent = title || 'Document';
-    editor.style.display = 'block';
-    editor.scrollIntoView({behavior:'smooth', block:'start'});
-  }
-  function openNew(){
-    var el = document.querySelector('.inline-form-item.new-doc');
-    if (el) showInEditor(el, 'New Document');
-  }
-  if (btnAdd){ btnAdd.addEventListener('click', function(){ setTimeout(openNew, 0); }); }
-  if (btnCancel){ btnCancel.addEventListener('click', function(){ editor.style.display='none'; }); }
-
-  document.querySelectorAll('.doc-edit-btn').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      var p = btn.getAttribute('data-prefix');
-      var el = document.getElementById('if-' + p);
-      if (el) showInEditor(el, 'Edit Document');
-    });
-  });
-})();
-</script>
-{% endif %}
+{% if current_step_key == 'add_documents' %}{% endif %}
 {% endblock %}
 
 {% comment %}
@@ -650,3 +863,6 @@
     Você precisará deste arquivo client/templatetags/custom_filters.py
 {% endcomment %}
 {# REMOVIDO: {% load custom_filters %} daqui, pois já é carregado pelo base.html #}
+
+
+
