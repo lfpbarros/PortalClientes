@@ -1046,11 +1046,16 @@ class ReverseDueDiligenceMessage(models.Model):
 
 
 class Notification(models.Model):
+    class Audience(models.TextChoices):
+        INTERNAL = 'INTERNAL', 'Interno'
+        CLIENT = 'CLIENT', 'Cliente'
+
     recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
     message = models.CharField(max_length=255)
     url = models.CharField(max_length=255, blank=True, null=True)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    audience = models.CharField(max_length=10, choices=Audience.choices, default=Audience.INTERNAL)
     # Opcional: vínculo com RDD
     rdd = models.ForeignKey(ReverseDueDiligence, on_delete=models.CASCADE, related_name='notifications', blank=True, null=True)
 

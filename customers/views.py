@@ -38,6 +38,7 @@ from .forms_evaluation import CompanyEvaluationForm
 from .forms import ReverseDueDiligenceCreateForm, ReverseDueDiligenceMessageForm, PriorBusinessRelationshipForm
 from django.contrib.auth.models import Group
 from .models import PriorBusinessRelationship, BusinessInformation
+from .permissions import is_internal_user
 from django.db.models import Q
 
 
@@ -527,12 +528,25 @@ def _notify_group(group_name, message, url=None, rdd=None):
     except Exception:
         return
     for u in group.user_set.all():
-        Notification.objects.create(recipient=u, message=message, url=url, rdd=rdd)
+        Notification.objects.create(
+            recipient=u,
+            message=message,
+            url=url,
+            rdd=rdd,
+            audience=Notification.Audience.INTERNAL,
+        )
 
 
 def _notify_user(user, message, url=None, rdd=None):
     if user:
-        Notification.objects.create(recipient=user, message=message, url=url, rdd=rdd)
+        audience = Notification.Audience.INTERNAL if is_internal_user(user) else Notification.Audience.CLIENT
+        Notification.objects.create(
+            recipient=user,
+            message=message,
+            url=url,
+            rdd=rdd,
+            audience=audience,
+        )
 
 
 class ReverseDueDiligenceCreateView(LoginRequiredMixin, View):
@@ -540,14 +554,15 @@ class ReverseDueDiligenceCreateView(LoginRequiredMixin, View):
 
     def get(self, request):
         form = ReverseDueDiligenceCreateForm(user=request.user)
-        return render(request, self.template_name, {'form': form})
+        context = {'form': form, 'is_internal': is_internal_user(request.user)}
+        return render(request, self.template_name, context)
 
     def post(self, request):
         form = ReverseDueDiligenceCreateForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             rdd = form.save(commit=False)
             # Usuário externo só pode criar para a própria empresa
-            if not request.user.groups.filter(name='Equipe').exists():
+            if not is_internal_user(request.user):
                 if rdd.company.created_by_id != request.user.id:
                     raise PermissionDenied("Você não pode criar RDD para esta empresa.")
             rdd.created_by = request.user
@@ -559,7 +574,8 @@ class ReverseDueDiligenceCreateView(LoginRequiredMixin, View):
             _notify_group('Equipe', f'Novo RDD: {rdd.subject}', url=rdd.get_absolute_url(), rdd=rdd)
             messages.success(request, _("Sua solicitação de Due Diligence Reversa foi enviada."))
             return redirect(rdd.get_absolute_url())
-        return render(request, self.template_name, {'form': form})
+        context = {'form': form, 'is_internal': is_internal_user(request.user)}
+        return render(request, self.template_name, context)
 
 
 class ReverseDueDiligenceDetailView(LoginRequiredMixin, View):
@@ -567,7 +583,7 @@ class ReverseDueDiligenceDetailView(LoginRequiredMixin, View):
 
     def _get_thread(self, request, pk):
         rdd = get_object_or_404(ReverseDueDiligence, pk=pk)
-        if request.user.groups.filter(name='Equipe').exists():
+        if is_internal_user(request.user):
             return rdd
         if rdd.created_by_id != request.user.id and rdd.company.created_by_id != request.user.id:
             raise PermissionDenied("Você não tem acesso a este RDD.")
@@ -577,12 +593,12 @@ class ReverseDueDiligenceDetailView(LoginRequiredMixin, View):
         rdd = self._get_thread(request, pk)
         form = ReverseDueDiligenceMessageForm()
         Notification.objects.filter(recipient=request.user, rdd=rdd, is_read=False).update(is_read=True)
-        is_internal = request.user.groups.filter(name='Equipe').exists()
+        is_internal = is_internal_user(request.user)
         return render(request, self.template_name, {'rdd': rdd, 'form': form, 'is_internal': is_internal})
 
     def post(self, request, pk):
         rdd = self._get_thread(request, pk)
-        is_internal = request.user.groups.filter(name='Equipe').exists()
+        is_internal = is_internal_user(request.user)
 
         # Close action (Equipe only)
         action = request.POST.get('action')
@@ -646,7 +662,7 @@ class ReverseDueDiligenceListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         qs = ReverseDueDiligence.objects.all().select_related('company', 'created_by')
-        is_internal = self.request.user.groups.filter(name='Equipe').exists()
+        is_internal = is_internal_user(self.request.user)
         status = self.request.GET.get('status')
         if not is_internal:
             qs = qs.filter(Q(created_by=self.request.user) | Q(company__created_by=self.request.user))
@@ -656,7 +672,7 @@ class ReverseDueDiligenceListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['is_internal'] = self.request.user.groups.filter(name='Equipe').exists()
+        ctx['is_internal'] = is_internal_user(self.request.user)
         ctx['current_status'] = self.request.GET.get('status') or ''
         return ctx
 
@@ -665,7 +681,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'customers/dashboard.html'
 
     def _is_internal(self, user):
-        return user.groups.filter(name='Equipe').exists()
+        return is_internal_user(user)
 
     def _step_completed(self, company, slug, is_internal):
         mapping = FORM_MODEL_MAPPING.get(slug)
@@ -751,8 +767,21 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 evaluation_due_companies = []
                 evaluation_upcoming_companies = []
 
+        audience_filters = [Notification.Audience.CLIENT]
+        if is_internal:
+            audience_filters.append(Notification.Audience.INTERNAL)
         try:
-            unread_notifications = Notification.objects.filter(recipient=user, is_read=False)[:20]
+            notification_qs = Notification.objects.filter(
+                is_read=False,
+                audience__in=audience_filters,
+            )
+            if is_internal:
+                unread_notifications = notification_qs[:20]
+            else:
+                company_ids = list(qs.values_list('pk', flat=True))
+                unread_notifications = notification_qs.filter(
+                    Q(recipient=user) | Q(rdd__company_id__in=company_ids)
+                )[:20]
         except Exception:
             unread_notifications = []
         rdd_open_threads = None
@@ -900,9 +929,22 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 evaluation_due_companies = []
                 evaluation_upcoming_companies = []
         
-        # Notificações e Due Diligence Reversa
+        # Notificações e Due Diligência Reversa
+        audience_filters = [Notification.Audience.CLIENT]
+        if is_internal:
+            audience_filters.append(Notification.Audience.INTERNAL)
         try:
-            unread_notifications = Notification.objects.filter(recipient=user, is_read=False)[:20]
+            notification_qs = Notification.objects.filter(
+                is_read=False,
+                audience__in=audience_filters,
+            )
+            if is_internal:
+                unread_notifications = notification_qs[:20]
+            else:
+                company_ids = list(qs.values_list('pk', flat=True))
+                unread_notifications = notification_qs.filter(
+                    Q(recipient=user) | Q(rdd__company_id__in=company_ids)
+                )[:20]
         except Exception:
             unread_notifications = []
         rdd_open_threads = None
@@ -1404,6 +1446,11 @@ def home(request):
 
 # Nova View: CompanyListView
 class CompanyListView(LoginRequiredMixin, ListView):
+    def dispatch(self, request, *args, **kwargs):
+        if not is_internal_user(request.user):
+            raise PermissionDenied(_("Você não tem permissão para acessar esta página."))
+        return super().dispatch(request, *args, **kwargs)
+
     """
     Exibe uma lista paginada de clientes (empresas).
     Requer que o usuário esteja logado.
@@ -1501,6 +1548,7 @@ class CompanyListView(LoginRequiredMixin, ListView):
         context['filter_area'] = self.request.GET.get('area', '')
         context['filter_q'] = self.request.GET.get('q', '')
 
+        context['is_internal'] = True
         return context
 
 
@@ -1773,3 +1821,5 @@ def final_analysis_attachment_approve(request, pk):
     att.save(update_fields=['approved', 'approved_at', 'approved_by'])
     messages.success(request, _("Anexo da análise final aprovado."))
     return redirect('customers:company_list')
+
+

@@ -4,6 +4,7 @@ from django.contrib.auth.models import Group
 from django.urls import reverse
 
 from .models import Company, OwnershipManagementInfo, StatusControl, Notification
+from .permissions import is_internal_user
 
 
 def _ensure_status_control(company):
@@ -19,7 +20,12 @@ def _notify_compliance(company):
     url = reverse('customers:company_detail', kwargs={'pk': company.pk})
     msg = f'Cliente pronto para avaliação de Compliance: {company.full_company_name}'
     for u in group.user_set.all():
-        Notification.objects.create(recipient=u, message=msg, url=url)
+        Notification.objects.create(
+            recipient=u,
+            message=msg,
+            url=url,
+            audience=Notification.Audience.INTERNAL,
+        )
 
 
 def _notify_finance(company):
@@ -30,7 +36,12 @@ def _notify_finance(company):
     url = reverse('customers:company_detail', kwargs={'pk': company.pk})
     msg = f'Cliente pronto para avaliação do Financeiro: {company.full_company_name}'
     for u in group.user_set.all():
-        Notification.objects.create(recipient=u, message=msg, url=url)
+        Notification.objects.create(
+            recipient=u,
+            message=msg,
+            url=url,
+            audience=Notification.Audience.INTERNAL,
+        )
 
 
 def _notify_user_missing(company, missing_list):
@@ -42,7 +53,13 @@ def _notify_user_missing(company, missing_list):
     exists_unread = Notification.objects.filter(recipient=user, message=msg, is_read=False).exists()
     if not exists_unread:
         url = reverse('customers:company_onboarding_step', kwargs={'pk': company.pk, 'step_slug': 'general_information'})
-        Notification.objects.create(recipient=user, message=msg, url=url)
+        audience = Notification.Audience.INTERNAL if is_internal_user(user) else Notification.Audience.CLIENT
+        Notification.objects.create(
+            recipient=user,
+            message=msg,
+            url=url,
+            audience=audience,
+        )
 
 
 def _update_min_requirements_state(company):
