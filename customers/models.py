@@ -308,9 +308,9 @@ class BusinessInformation(models.Model):
     # Section 3: PRIOR BUSINESS RELATIONSHIPS WITH PRIO
     has_prior_business_relationships = models.BooleanField(
         default=False,
-        verbose_name="Has the company had any pre-existing business relationships with Repsol or its subsidiaries?"
+        verbose_name="Has the company had any pre-existing business relationships with PRIO or its subsidiaries?"
     )
-    repsol_company_name = models.CharField(max_length=255, blank=True, null=True, verbose_name="Repsol company name")
+    company_name = models.CharField(max_length=255, blank=True, null=True, verbose_name="Company name")
     nature_of_agreement = models.TextField(blank=True, null=True, verbose_name="Nature of the agreement")
     starting_date_relationship = models.DateField(blank=True, null=True, verbose_name="Starting date and whether the relationship is maintained today")
     key_contacts = models.TextField(blank=True, null=True, verbose_name="Key contacts")
@@ -343,7 +343,7 @@ class PriorBusinessRelationship(models.Model):
         related_name='prior_relationships',
         verbose_name="Business Information",
     )
-    repsol_company_name = models.CharField(max_length=255, verbose_name="Repsol company name")
+    company_name = models.CharField(max_length=255, verbose_name="Company name")
     nature_of_agreement = models.TextField(blank=True, null=True, verbose_name="Nature of the agreement")
     starting_date = models.DateField(blank=True, null=True, verbose_name="Starting date and whether the relationship is maintained today")
     key_contacts = models.TextField(blank=True, null=True, verbose_name="Key contacts")
@@ -360,7 +360,7 @@ class PriorBusinessRelationship(models.Model):
     )
 
     def __str__(self):
-        return f"{self.repsol_company_name} - {self.business_information.company.full_company_name}"
+        return f"{self.company_name} - {self.business_information.company.full_company_name}"
 
     class Meta:
         verbose_name = "Prior Business Relationship"

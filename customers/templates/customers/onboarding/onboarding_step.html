@@ -278,8 +278,8 @@
             <ol class="mt-2 mb-0">
                 <li>I am authorized to sign this questionnaire on behalf of the Company.</li>
                 <li>The included information is complete and accurate.</li>
-                <li>Repsol will be immediately informed in writing if there are any material changes to the information provided.</li>
-                <li>Repsol is authorized to verify all the information provided and use it for due diligence purposes as well as request any further information or clarification that Repsol deems necessary.</li>
+                <li>PRIO will be immediately informed in writing if there are any material changes to the information provided.</li>
+                <li>PRIO is authorized to verify all the information provided and use it for due diligence purposes as well as request any further information or clarification that PRIO deems necessary.</li>
             </ol>
         </div>
         {% endif %}
@@ -384,7 +384,7 @@
                     <table class="table table-sm table-striped align-middle contacts-table">
                         <thead>
                         <tr>
-                            <th>{% trans "Repsol company name" %}</th>
+                            <th>{% trans "Company name" %}</th>
                             <th>{% trans "Nature of the agreement" %}</th>
                             <th>{% trans "Starting date and whether the relationship is maintained today" %}</th>
                             <th>{% trans "Key contacts" %}</th>
@@ -395,7 +395,7 @@
                         {% if company.business_information %}
                             {% for rel in company.business_information.prior_relationships.all %}
                                 <tr>
-                                    <td>{{ rel.repsol_company_name }}</td>
+                                    <td>{{ rel.company_name }}</td>
                                     <td>{{ rel.nature_of_agreement|default:'-' }}</td>
                                     <td>{{ rel.starting_date|date:'d/m/Y'|default:'-' }}</td>
                                     <td>{{ rel.key_contacts|default:'-' }}</td>

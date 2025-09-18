@@ -214,7 +214,7 @@ class BusinessInformationForm(forms.ModelForm):
                 required=True,
             )
         # Remover campos antigos de relacionamento (agora gerenciados na tabela separada)
-        for fname in ['repsol_company_name', 'nature_of_agreement', 'starting_date_relationship', 'key_contacts']:
+        for fname in ['company_name', 'nature_of_agreement', 'starting_date_relationship', 'key_contacts']:
             self.fields.pop(fname, None)
     class Meta:
         model = BusinessInformation
@@ -226,8 +226,8 @@ class BusinessInformationForm(forms.ModelForm):
             'nature_of_proposed_contract': "Please explain the nature of the business you intend to conduct with PRIO.",
             'has_agents_intermediaries': "Will agents or intermediaries or subcontractors be involved in our business relationship?",
             'agents_intermediaries_details': "Please provide the details in the table below (including but not limited to: Name, Country of Residence and Role):",
-            'has_prior_business_relationships': "Has the company had any pre-existing business relationships with Repsol or its subsidiaries?",
-            'repsol_company_name': "Repsol company name",
+            'has_prior_business_relationships': "Has the company had any pre-existing business relationships with PRIO or its subsidiaries?",
+            'company_name': "Company name",
             'nature_of_agreement': "Nature of the agreement",
             'starting_date_relationship': "Starting date and whether the relationship is maintained today",
             'key_contacts': "Key contacts",
@@ -254,7 +254,7 @@ class PriorBusinessRelationshipForm(forms.ModelForm):
             'starting_date': forms.DateInput(attrs={'type': 'date'}),
         }
         labels = {
-            'repsol_company_name': 'Repsol company name',
+            'company_name': 'Company name',
             'nature_of_agreement': 'Nature of the agreement',
             'starting_date': 'Starting date and whether the relationship is maintained today',
             'key_contacts': 'Key contacts',
