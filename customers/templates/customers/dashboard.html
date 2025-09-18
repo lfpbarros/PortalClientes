@@ -44,9 +44,13 @@
     </header>
 
     <div class="form-area">
-      <div class="d-flex justify-content-end mb-2">
-        <button id="notifications-toggle-btn" type="button" class="btn btn-outline-secondary btn-sm">{% trans "Ocultar Notificações" %}</button>
-      </div>
+      {% if unread_notifications %}
+        <div class="d-flex justify-content-end mb-2">
+          <button id="notifications-toggle-btn" type="button" class="btn btn-outline-secondary btn-sm" data-hide-label='{% trans "Ocultar Notificações" %}' data-show-label='{% trans "Mostrar Notificações" %}'>
+            {% trans "Ocultar Notificações" %}
+          </button>
+        </div>
+      {% endif %}
       {% if is_internal %}
         {% if unread_notifications %}
           <div class="notifications-block alert alert-info" role="alert">
@@ -349,37 +353,74 @@
   <script src="{% static 'js/table-filters.js' %}"></script>
   <script>
     (function(){
-      const now = new Date();
-      document.querySelectorAll('.sla-badge[data-created]')?.forEach(el => {
-        const createdStr = el.getAttribute('data-created');
-        const created = new Date(createdStr);
-        if (isNaN(created.getTime())) return;
-        const diffDays = Math.floor((now - created) / (1000*60*60*24));
-        let text = 'Novo';
-        let cls = 'bg-success';
-        if (diffDays > 14) { text = 'Atrasado'; cls = 'bg-danger'; }
-        else if (diffDays > 7) { text = 'Atenção'; cls = 'bg-warning text-dark'; }
-        el.classList.add('rounded-pill', cls);
+      var now = new Date();
+      var badges = document.querySelectorAll('.sla-badge[data-created]');
+      for (var i = 0; i < badges.length; i++) {
+        var el = badges[i];
+        var createdStr = el.getAttribute('data-created');
+        var created = new Date(createdStr);
+        if (isNaN(created.getTime())) {
+          continue;
+        }
+        var diffDays = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+        var text = 'Novo';
+        var cls = ['bg-success'];
+        if (diffDays > 14) {
+          text = 'Atrasado';
+          cls = ['bg-danger'];
+        } else if (diffDays > 7) {
+          text = 'Atenção';
+          cls = ['bg-warning', 'text-dark'];
+        }
+        el.classList.add('rounded-pill');
+        for (var j = 0; j < cls.length; j++) {
+          el.classList.add(cls[j]);
+        }
         el.style.padding = '0.35rem 0.6rem';
         el.textContent = text;
-        el.title = `Criado há ${diffDays} dia(s)`;
-      });
+        el.title = 'Criado há ' + diffDays + ' dia(s)';
+      }
     })();
     (function(){
-      const btn = document.getElementById('notifications-toggle-btn');
-      const key = 'dashboardNotificationsHidden';
-      function blocks() { return Array.from(document.querySelectorAll('.notifications-block')); }
-      function update(hidden){
-        blocks().forEach(el => el.classList.toggle('d-none', hidden));
-        if (btn) btn.textContent = hidden ? 'Mostrar Notificações' : 'Ocultar Notificações';
-        try { localStorage.setItem(key, hidden ? '1' : '0'); } catch(e) {}
+      var btn = document.getElementById('notifications-toggle-btn');
+      if (!btn) {
+        return;
       }
-      let hidden = false;
-      try { hidden = localStorage.getItem(key) === '1'; } catch(e) { hidden = false; }
-      update(hidden);
-      if (btn) btn.addEventListener('click', function(){
-        const anyVisible = blocks().some(el => !el.classList.contains('d-none'));
-        update(anyVisible);
+      var storageKey = 'dashboardNotificationsHidden';
+      var blocks = Array.prototype.slice.call(document.querySelectorAll('.notifications-block'));
+      if (!blocks.length) {
+        btn.classList.add('d-none');
+        return;
+      }
+      var showLabel = btn.getAttribute('data-show-label') || 'Mostrar Notificações';
+      var hideLabel = btn.getAttribute('data-hide-label') || 'Ocultar Notificações';
+      function setHidden(hidden) {
+        for (var i = 0; i < blocks.length; i++) {
+          blocks[i].classList.toggle('d-none', hidden);
+        }
+        btn.textContent = hidden ? showLabel : hideLabel;
+        try {
+          window.localStorage.setItem(storageKey, hidden ? '1' : '0');
+        } catch (error) {
+          // ignore storage errors
+        }
+      }
+      var initialHidden = false;
+      try {
+        initialHidden = window.localStorage.getItem(storageKey) == '1';
+      } catch (error) {
+        initialHidden = false;
+      }
+      setHidden(initialHidden);
+      btn.addEventListener('click', function () {
+        var anyVisible = false;
+        for (var i = 0; i < blocks.length; i++) {
+          if (!blocks[i].classList.contains('d-none')) {
+            anyVisible = true;
+            break;
+          }
+        }
+        setHidden(anyVisible);
       });
     })();
   </script>
