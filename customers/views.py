@@ -38,7 +38,7 @@ from .forms_evaluation import CompanyEvaluationForm
 from .forms import ReverseDueDiligenceCreateForm, ReverseDueDiligenceMessageForm, PriorBusinessRelationshipForm
 from django.contrib.auth.models import Group
 from .models import PriorBusinessRelationship, BusinessInformation
-from .permissions import is_internal_user
+from .permissions import is_internal_user, can_start_onboarding
 from django.db.models import Q
 
 
@@ -554,7 +554,7 @@ class ReverseDueDiligenceCreateView(LoginRequiredMixin, View):
 
     def get(self, request):
         form = ReverseDueDiligenceCreateForm(user=request.user)
-        context = {'form': form, 'is_internal': is_internal_user(request.user)}
+        context = {'form': form, 'is_internal': is_internal_user(request.user), 'can_create_company': can_start_onboarding(request.user)}
         return render(request, self.template_name, context)
 
     def post(self, request):
@@ -574,7 +574,7 @@ class ReverseDueDiligenceCreateView(LoginRequiredMixin, View):
             _notify_group('Equipe', f'Novo RDD: {rdd.subject}', url=rdd.get_absolute_url(), rdd=rdd)
             messages.success(request, _("Sua solicitação de Due Diligence Reversa foi enviada."))
             return redirect(rdd.get_absolute_url())
-        context = {'form': form, 'is_internal': is_internal_user(request.user)}
+        context = {'form': form, 'is_internal': is_internal_user(request.user), 'can_create_company': can_start_onboarding(request.user)}
         return render(request, self.template_name, context)
 
 
@@ -594,7 +594,7 @@ class ReverseDueDiligenceDetailView(LoginRequiredMixin, View):
         form = ReverseDueDiligenceMessageForm()
         Notification.objects.filter(recipient=request.user, rdd=rdd, is_read=False).update(is_read=True)
         is_internal = is_internal_user(request.user)
-        return render(request, self.template_name, {'rdd': rdd, 'form': form, 'is_internal': is_internal})
+        return render(request, self.template_name, {'rdd': rdd, 'form': form, 'is_internal': is_internal, 'can_create_company': can_start_onboarding(request.user)})
 
     def post(self, request, pk):
         rdd = self._get_thread(request, pk)
@@ -647,7 +647,7 @@ class ReverseDueDiligenceDetailView(LoginRequiredMixin, View):
             rdd.save(update_fields=['last_message_at', 'status'])
             messages.success(request, _("Mensagem enviada."))
             return redirect(rdd.get_absolute_url())
-        return render(request, self.template_name, {'rdd': rdd, 'form': form, 'is_internal': is_internal})
+        return render(request, self.template_name, {'rdd': rdd, 'form': form, 'is_internal': is_internal, 'can_create_company': can_start_onboarding(request.user)})
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -673,6 +673,7 @@ class ReverseDueDiligenceListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['is_internal'] = is_internal_user(self.request.user)
+        ctx['can_create_company'] = can_start_onboarding(self.request.user)
         ctx['current_status'] = self.request.GET.get('status') or ''
         return ctx
 
@@ -717,6 +718,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         user = self.request.user
         is_internal = self._is_internal(user)
         ctx['is_internal'] = is_internal
+        ctx['can_create_company'] = can_start_onboarding(user)
 
         qs = Company.objects.all() if is_internal else Company.objects.filter(created_by=user)
 
@@ -837,143 +839,6 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 ctx.update({'ready_for_compliance_companies': ready_for_compliance[:20]})
         except Exception:
             pass
-        return ctx
-
-    def _is_internal(self, user):
-        return user.groups.filter(name='Equipe').exists()
-
-    def _step_completed(self, company, slug, is_internal):
-        """Replica a lógica de conclusão por etapa usada no onboarding."""
-        mapping = FORM_MODEL_MAPPING.get(slug)
-        if not mapping:
-            return False
-        Model = mapping['model']
-        if Model == Company:
-            return bool(company.full_company_name and company.registered_business_address)
-        from .models import KYCDocument, IndividualContact
-        if Model.__name__ == 'KYCDocument':
-            return KYCDocument.objects.filter(company=company).exists()
-        if Model.__name__ == 'IndividualContact':
-            return IndividualContact.objects.filter(company=company).exists()
-        try:
-            mapping['model'].objects.get(company=company)
-            return True
-        except mapping['model'].DoesNotExist:
-            return False
-
-    def _visible_steps(self, is_internal):
-        if is_internal:
-            return list(ONBOARDING_STEPS.keys())
-        return [s for s in ONBOARDING_STEPS.keys() if s not in ('compliance_analysis', 'status_control')]
-
-    def _company_progress(self, company, is_internal):
-        steps = self._visible_steps(is_internal)
-        completed = [s for s in steps if self._step_completed(company, s, is_internal)]
-        pct = round((len(completed) / len(steps) * 100) if steps else 0)
-        return pct, completed
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        user = self.request.user
-        is_internal = self._is_internal(user)
-        ctx['is_internal'] = is_internal
-
-        qs = Company.objects.all() if is_internal else Company.objects.filter(created_by=user)
-
-        total = qs.count()
-        # StatusControl KPIs
-        from .models import StatusControl
-        sc_qs = StatusControl.objects.filter(company__in=qs)
-        completed = sc_qs.filter(client_onboarding_finished=True).count()
-        pending = sc_qs.filter(is_pending=True).count()
-
-        # Qualificações de área
-        trading_pending = sc_qs.filter(trading_qualified=False).count()
-        compliance_pending = sc_qs.filter(compliance_qualified=False).count()
-        treasury_pending = sc_qs.filter(treasury_qualified=False).count()
-
-        # Amostra de recentes
-        recent = qs.order_by('-created_at')[:5]
-
-        # Progresso médio
-        progress_values = []
-        for c in qs[:50]:  # limita para desempenho
-            pct, _ = self._company_progress(c, is_internal)
-            progress_values.append(pct)
-        avg_progress = round(sum(progress_values) / len(progress_values)) if progress_values else 0
-
-        # Para externos: lista de pendências por empresa (próxima etapa não concluída)
-        pending_items = []
-        if not is_internal:
-            steps = self._visible_steps(False)
-            for c in qs:
-                for s in steps:
-                    if not self._step_completed(c, s, False):
-                        pending_items.append({
-                            'company': c,
-                            'next_step_slug': s,
-                            'next_step_title': ONBOARDING_STEPS.get(s, s).title(),
-                        })
-                        break
-
-        # Avaliações (somente para equipe interna)
-        evaluation_due_companies = []
-        evaluation_upcoming_companies = []
-        if is_internal:
-            today = date.today()
-            try:
-                evaluation_due_companies = list(qs.filter(next_evaluation_date__isnull=False, next_evaluation_date__lte=today)[:20])
-                evaluation_upcoming_companies = list(qs.filter(next_evaluation_date__gt=today, next_evaluation_date__lte=today + timedelta(days=7))[:20])
-            except Exception:
-                # Evita quebrar o dashboard caso o campo ainda não exista em migração
-                evaluation_due_companies = []
-                evaluation_upcoming_companies = []
-        
-        # Notificações e Due Diligência Reversa
-        audience_filters = [Notification.Audience.CLIENT]
-        if is_internal:
-            audience_filters.append(Notification.Audience.INTERNAL)
-        try:
-            notification_qs = Notification.objects.filter(
-                is_read=False,
-                audience__in=audience_filters,
-            )
-            if is_internal:
-                unread_notifications = notification_qs[:20]
-            else:
-                company_ids = list(qs.values_list('pk', flat=True))
-                unread_notifications = notification_qs.filter(
-                    Q(recipient=user) | Q(rdd__company_id__in=company_ids)
-                )[:20]
-        except Exception:
-            unread_notifications = []
-        rdd_open_threads = None
-        rdd_my_threads = None
-        try:
-            if is_internal:
-                rdd_open_threads = ReverseDueDiligence.objects.filter(status__in=['OPEN', 'RESPONDED']).order_by('-updated_at')[:10]
-            else:
-                rdd_my_threads = ReverseDueDiligence.objects.filter(created_by=user).order_by('-updated_at')[:10]
-        except Exception:
-            pass
-
-        ctx.update({
-            'total_companies': total,
-            'completed_count': completed,
-            'pending_flag_count': pending,
-            'trading_pending': trading_pending,
-            'compliance_pending': compliance_pending,
-            'treasury_pending': treasury_pending,
-            'recent_companies': recent,
-            'avg_progress': avg_progress,
-            'pending_items': pending_items,
-            'ONBOARDING_STEPS': ONBOARDING_STEPS,
-            'evaluation_due_companies': evaluation_due_companies,
-            'evaluation_upcoming_companies': evaluation_upcoming_companies,
-            'unread_notifications': unread_notifications,
-            'rdd_open_threads': rdd_open_threads,
-            'rdd_my_threads': rdd_my_threads,
-        })
         return ctx
 
 # Handler de 403 amigável
@@ -1549,6 +1414,7 @@ class CompanyListView(LoginRequiredMixin, ListView):
         context['filter_q'] = self.request.GET.get('q', '')
 
         context['is_internal'] = True
+        context['can_create_company'] = can_start_onboarding(self.request.user)
         return context
 
 
@@ -1821,5 +1687,6 @@ def final_analysis_attachment_approve(request, pk):
     att.save(update_fields=['approved', 'approved_at', 'approved_by'])
     messages.success(request, _("Anexo da análise final aprovado."))
     return redirect('customers:company_list')
+
 
 

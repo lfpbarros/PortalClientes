@@ -40,3 +40,28 @@ def is_internal_user(user) -> bool:
     # If the user has any other group, treat as internal by default so we don't
     # accidentally expose restricted areas to clients.
     return True
+
+
+def can_start_onboarding(user) -> bool:
+    """Return True when the user may create a new onboarding/company."""
+    if not getattr(user, "is_authenticated", False):
+        return False
+    if is_internal_user(user):
+        return True
+
+    try:
+        group_names = {name.lower() for name in user.groups.values_list("name", flat=True)}
+    except Exception:
+        group_names = set()
+
+    if not group_names or group_names <= CLIENT_GROUP_NAMES:
+        return True
+
+    try:
+        if user.has_perm("customers.add_company"):
+            return True
+    except Exception:
+        return True
+
+    return True
+

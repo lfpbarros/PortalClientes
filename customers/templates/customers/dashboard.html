@@ -13,7 +13,7 @@
     <h2 class="sidebar-logo-text">{% trans "Portal Clientes" %}</h2>
     <h3 class="sidebar-company-name">{% trans "Dashboard" %}</h3>
 
-    {% if is_internal %}
+    {% if can_create_company %}
       <a href="{% url 'customers:company_onboarding_create' %}" class="btn sidebar-back-button mt-4">
         <i class="fas fa-plus me-2"></i> {% trans "Novo Cliente" %}
       </a>
